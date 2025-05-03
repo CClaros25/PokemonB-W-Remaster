@@ -1,1 +1,35 @@
-<script src="game.js"><script>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pokémon Black/White Style Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #gameCanvas {
+            background: white;
+            border: 3px solid #333;
+            margin: 0 auto;
+            display: block;
+        }
+        h1 {
+            color: #3a5da8;
+        }
+        .controls {
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pokémon Black/White Style Game</h1>
+    <div class="controls">
+        <p>Use arrow keys to move. Walk in grass to encounter Pokémon!</p>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <script src="pokemon-game.js"></script>
+</body>
+</html>
