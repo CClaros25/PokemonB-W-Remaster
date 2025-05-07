@@ -1,8 +1,17 @@
-// Canvas setup 
+// Asset loading
+const assets = {
+    player: new Image(),
+    grass: new Image(),
+    // You can add more: tree: new Image(), etc.
+};
+assets.player.src = 'images/player.gif'; // or player.png (spritesheet preferred)
+assets.grass.src = 'images/grass.gif';
+
+// Canvas setup
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Resize canvas to fill most of the screen
+// Resize canvas
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -11,12 +20,11 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // Game state
-const POKEMON_COUNT = 1025; // Gen 1-6
 let player = { x: 200, y: 200, dir: 'down' };
 let inBattle = false;
 let grassPatches = [];
 
-// Initialize
+// Initialization
 function init() {
     createGrass();
     document.addEventListener('keydown', handleKeyPress);
@@ -32,12 +40,8 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Draw functions
 function drawPlayer() {
-    ctx.fillStyle = 'blue';
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, 10, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.drawImage(assets.player, player.x - 16, player.y - 16, 32, 32); // Centered
 }
 
 function createGrass() {
@@ -45,20 +49,18 @@ function createGrass() {
         grassPatches.push({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            width: 50 + Math.random() * 100,
-            height: 50 + Math.random() * 100
+            width: 64,
+            height: 64
         });
     }
 }
 
 function drawGrass() {
-    ctx.fillStyle = 'green';
     grassPatches.forEach(patch => {
-        ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
+        ctx.drawImage(assets.grass, patch.x, patch.y, patch.width, patch.height);
     });
 }
 
-// Key controls
 function handleKeyPress(e) {
     const speed = 5;
     if (e.key === 'ArrowUp') { player.y -= speed; player.dir = 'up'; }
@@ -67,7 +69,6 @@ function handleKeyPress(e) {
     if (e.key === 'ArrowRight') { player.x += speed; player.dir = 'right'; }
 }
 
-// Placeholder for battle drawing
 function drawBattle() {
     ctx.fillStyle = 'red';
     ctx.fillRect(canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
