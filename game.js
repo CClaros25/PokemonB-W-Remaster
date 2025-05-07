@@ -1,6 +1,14 @@
-// Canvas setup
+// Canvas setup 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+// Resize canvas to fill most of the screen
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
 // Game state
 const POKEMON_COUNT = 1025; // Gen 1-6
@@ -35,12 +43,19 @@ function drawPlayer() {
 function createGrass() {
     for (let i = 0; i < 15; i++) {
         grassPatches.push({
-            x: Math.random() * 350,
-            y: Math.random() * 350,
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
             width: 50 + Math.random() * 100,
             height: 50 + Math.random() * 100
         });
     }
+}
+
+function drawGrass() {
+    ctx.fillStyle = 'green';
+    grassPatches.forEach(patch => {
+        ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
+    });
 }
 
 // Key controls
@@ -50,6 +65,12 @@ function handleKeyPress(e) {
     if (e.key === 'ArrowDown') { player.y += speed; player.dir = 'down'; }
     if (e.key === 'ArrowLeft') { player.x -= speed; player.dir = 'left'; }
     if (e.key === 'ArrowRight') { player.x += speed; player.dir = 'right'; }
+}
+
+// Placeholder for battle drawing
+function drawBattle() {
+    ctx.fillStyle = 'red';
+    ctx.fillRect(canvas.width / 2 - 100, canvas.height / 2 - 100, 200, 200);
 }
 
 init();
