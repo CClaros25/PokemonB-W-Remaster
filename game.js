@@ -3,6 +3,7 @@ const config = {
     width: 1024,
     height: 768,
     pixelArt: true,
+    backgroundColor: '#7CFC00', // Added grass green background
     scene: {
         preload,
         create,
@@ -20,7 +21,7 @@ function preload() {
 }
 
 function create() {
-    // Original layout with 1/8 scale grass
+    // Create grass sprites (1/8 scale)
     const tileSize = 64;
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
@@ -34,7 +35,7 @@ function create() {
                     y * tileSize + tileSize/2,
                     'grass'
                 );
-                grass.setScale(0.125); // 1/8 scale
+                grass.setScale(0.125);
                 grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
@@ -44,7 +45,7 @@ function create() {
     // Player setup
     player = this.add.sprite(256, 192, 'hero');
 
-    // Original animations
+    // Animations (unchanged)
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
@@ -83,7 +84,6 @@ function create() {
         frameRate: 1
     });
 
-    // Controls
     cursors = this.input.keyboard.createCursorKeys();
 }
 
