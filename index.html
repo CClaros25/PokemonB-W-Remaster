@@ -1,27 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Pokémon Gen 1-6 Game</title>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-            text-align: center;
-            background: #e0f7fa;
-        }
-        #gameCanvas {
-            background: #a5d6a7;
-            border: 5px solid #2e7d32;
-            margin: 20px auto;
-        }
-        h1 {
-            color: #d32f2f;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Phaser Sprite Movement</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <style>
+    body { margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    canvas { border: 1px solid white; image-rendering: pixelated; }
+  </style>
 </head>
 <body>
-    <h1>Pokémon Black/White Style</h1>
-    <p>Walk in grass to encounter Pokémon! (Arrow keys to move)</p>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-    <script src="game.js"></script>
+  <script src="game.js"></script>
 </body>
 </html>
