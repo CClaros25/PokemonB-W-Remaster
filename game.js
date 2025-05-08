@@ -34,7 +34,7 @@ function create() {
                     y * tileSize + tileSize/2,
                     'grass'
                 );
-                grass.setScale(0.15); // 1/10 scale
+                grass.setScale(0.125); // 1/10 scale
                 grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
