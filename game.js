@@ -1,10 +1,11 @@
-// Main Game Configuration (unchanged from your original)
+// Main Game Configuration
 const mainConfig = {
     type: Phaser.AUTO,
+    parent: 'main-game', // Parent div
     width: 1024,
     height: 768,
     pixelArt: true,
-    backgroundColor: '#7CFC00', // Grass green
+    backgroundColor: '#7CFC00',
     scene: {
         preload,
         create,
@@ -31,31 +32,46 @@ const sideGame = new Phaser.Game(sideConfig);
 
 let player, cursors;
 
-// Your original preload function
 function preload() {
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
     this.load.image('grass', 'grass.png');
+    this.load.image('tree', 'tree.png'); // Load tree texture
 }
 
-// Your original create function with 1/8 scale grass
 function create() {
-    // Grass placement (1/8 scale)
     const tileSize = 64;
     const cols = Math.floor(this.sys.game.config.width / tileSize);
     const rows = Math.floor(this.sys.game.config.height / tileSize);
     const grassGroup = this.add.group();
+    const treeGroup = this.add.group();
 
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            if (Math.random() < 0.6) {
-                const grass = this.add.image(
-                    x * tileSize + tileSize/2,
-                    y * tileSize + tileSize/2,
-                    'grass'
-                );
-                grass.setScale(0.125);
-                grass.setOrigin(0.5);
-                grassGroup.add(grass);
+    const patchCount = 30;
+    for (let i = 0; i < patchCount; i++) {
+        const patchX = Phaser.Math.Between(1, cols - 3);
+        const patchY = Phaser.Math.Between(1, rows - 3);
+        const patchSize = Phaser.Math.Between(6, 9);
+
+        let hasTree = Math.random() < 0.5;
+        let treePlaced = false;
+
+        for (let j = 0; j < patchSize; j++) {
+            const offsetX = Phaser.Math.Between(-1, 1);
+            const offsetY = Phaser.Math.Between(-1, 1);
+            const x = (patchX + offsetX) * tileSize + tileSize / 2;
+            const y = (patchY + offsetY) * tileSize + tileSize / 2;
+
+            const grass = this.add.image(x, y, 'grass');
+            grass.setScale(0.125);
+            grass.setOrigin(0.5);
+            grassGroup.add(grass);
+
+            // Place one tree per patch, sometimes
+            if (hasTree && !treePlaced && Math.random() < 0.3) {
+                const tree = this.add.image(x, y - 20, 'tree');
+                tree.setScale(0.25);
+                tree.setOrigin(0.5, 1);
+                treeGroup.add(tree);
+                treePlaced = true;
             }
         }
     }
@@ -63,7 +79,6 @@ function create() {
     // Player setup
     player = this.add.sprite(256, 192, 'hero');
 
-    // Your original animations
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
@@ -105,7 +120,6 @@ function create() {
     cursors = this.input.keyboard.createCursorKeys();
 }
 
-// Your original update function
 function update() {
     let moving = false;
     const speed = 2;
@@ -133,9 +147,7 @@ function update() {
     }
 }
 
-// Side panel content
 function createSidePanel() {
-    // Add UI elements
     this.add.text(20, 30, 'PLAYER STATS', {
         font: '24px Arial',
         fill: '#FFFFFF'
