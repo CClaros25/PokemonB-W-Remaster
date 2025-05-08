@@ -3,7 +3,7 @@ const mainConfig = {
     width: 800,  // Reduced main canvas width
     height: 768,
     pixelArt: true,
-    backgroundColor: '#5fb31b', // Grass green background
+    backgroundColor: '#468215', // Grass green background
     scene: {
         preload,
         create,
