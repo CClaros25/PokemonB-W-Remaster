@@ -20,28 +20,28 @@ function preload() {
 }
 
 function create() {
-    // Original layout with 1/16 scale grass
-    const tileSize = 64; // Original tile size
+    // Original layout with 1/10 scale grass
+    const tileSize = 64;
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
     const grassGroup = this.add.group();
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            if (Math.random() < 0.6) { // Original 60% density
+            if (Math.random() < 0.6) {
                 const grass = this.add.image(
-                    x * tileSize + tileSize/2, // Original centered position
+                    x * tileSize + tileSize/2,
                     y * tileSize + tileSize/2,
                     'grass'
                 );
-                grass.setScale(0.1); // 1/16 scale
-                grass.setOrigin(0.5); // Center origin
+                grass.setScale(0.1); // 1/10 scale
+                grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
         }
     }
 
-    // Player setup (unchanged)
+    // Player setup
     player = this.add.sprite(256, 192, 'hero');
 
     // Original animations
@@ -83,12 +83,11 @@ function create() {
         frameRate: 1
     });
 
-    // Original controls
+    // Controls
     cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update() {
-    // Original movement code
     let moving = false;
     const speed = 2;
 
