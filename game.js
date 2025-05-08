@@ -1,7 +1,7 @@
 const config = {
     type: Phaser.AUTO,
-    width: 512, // doubled the canvas size
-    height: 384,
+    width: 1024, // Actually doubled size (original 512x384 -> now 1024x768)
+    height: 768,
     pixelArt: true,
     scene: {
         preload,
@@ -16,7 +16,7 @@ let player, cursors;
 
 function preload() {
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
-    this.load.image('grass', 'images/grass.png'); // load grass tile
+    this.load.image('grass', 'grass.png'); // Simplified path - make sure grass.png is in same directory
 }
 
 function create() {
@@ -66,6 +66,13 @@ function create() {
         repeat: -1
     });
 
+    // Add idle animations or set default frame
+    this.anims.create({
+        key: 'idle_down',
+        frames: [{ key: 'hero', frame: 'walk_down_1' }],
+        frameRate: 1
+    });
+
     cursors = this.input.keyboard.createCursorKeys();
 }
 
@@ -91,6 +98,6 @@ function update() {
     }
 
     if (!moving) {
-        player.anims.stop();
+        player.anims.play('idle_down', true); // Set to idle animation
     }
 }
