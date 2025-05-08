@@ -20,8 +20,8 @@ function preload() {
 }
 
 function create() {
-    // Fill background with randomly placed grass (now scaled down)
-    const tileSize = 64; // Keep original placement grid size
+    // Fill background with randomly placed tiny grass
+    const tileSize = 64;
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
     const grassGroup = this.add.group();
@@ -29,14 +29,13 @@ function create() {
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             if (Math.random() < 0.6) {
-                // Create grass with smaller size
                 const grass = this.add.image(
-                    x * tileSize + tileSize/2, // Center in tile
+                    x * tileSize + tileSize/2,
                     y * tileSize + tileSize/2, 
                     'grass'
                 );
-                grass.setScale(0.5); // Scale down to half size
-                grass.setOrigin(0.5); // Center the origin
+                grass.setScale(1/64); // 1/64th size
+                grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
         }
@@ -44,6 +43,7 @@ function create() {
 
     player = this.add.sprite(256, 192, 'hero');
 
+    // Animation configurations
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4'].map(f => ({ key: 'hero', frame: f })),
@@ -88,15 +88,18 @@ function update() {
         player.x -= 2;
         player.anims.play('walk_left', true);
         moving = true;
-    } else if (cursors.right.isDown) {
+    } 
+    else if (cursors.right.isDown) {
         player.x += 2;
         player.anims.play('walk_right', true);
         moving = true;
-    } else if (cursors.up.isDown) {
+    } 
+    else if (cursors.up.isDown) {
         player.y -= 2;
         player.anims.play('walk_up', true);
         moving = true;
-    } else if (cursors.down.isDown) {
+    } 
+    else if (cursors.down.isDown) {
         player.y += 2;
         player.anims.play('walk_down', true);
         moving = true;
