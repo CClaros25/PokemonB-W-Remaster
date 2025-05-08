@@ -1,11 +1,11 @@
 // Main Game Configuration
 const mainConfig = {
     type: Phaser.AUTO,
-    parent: 'main-game', // Parent div
+    parent: 'main-game', // Parent div for the main game
     width: 1024,
     height: 768,
     pixelArt: true,
-    backgroundColor: '#7CFC00',
+    backgroundColor: '#7CFC00', // Grass green
     scene: {
         preload,
         create,
@@ -51,7 +51,7 @@ function create() {
         const patchY = Phaser.Math.Between(1, rows - 3);
         const patchSize = Phaser.Math.Between(6, 9);
 
-        let hasTree = Math.random() < 0.5;
+        let hasTree = Math.random() < 0.5; // 50% chance for a tree in the patch
         let treePlaced = false;
 
         for (let j = 0; j < patchSize; j++) {
@@ -63,22 +63,26 @@ function create() {
             const grass = this.add.image(x, y, 'grass');
             grass.setScale(0.125);
             grass.setOrigin(0.5);
+            grass.setDepth(0); // Grass at the back layer
             grassGroup.add(grass);
 
-            // Place one tree per patch, sometimes
+            // Place one tree per patch, if selected for that patch
             if (hasTree && !treePlaced && Math.random() < 0.3) {
-                const tree = this.add.image(x, y - 20, 'tree');
-                tree.setScale(0.25);
-                tree.setOrigin(0.5, 1);
+                const tree = this.add.image(x, y - 20, 'tree'); // Slight upward offset for overlap effect
+                tree.setScale(0.4); // Bigger tree
+                tree.setOrigin(0.5, 1); // Bottom-center anchor
+                tree.setDepth(2); // Trees on top of player
                 treeGroup.add(tree);
                 treePlaced = true;
             }
         }
     }
 
-    // Player setup
+    // Player setup: Added after patches so order doesn't interfere
     player = this.add.sprite(256, 192, 'hero');
+    player.setDepth(1); // Player in front of grass but behind trees
 
+    // Define animations for the player
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
@@ -167,6 +171,5 @@ function createSidePanel() {
         font: '18px Arial',
         fill: '#FFFFFF'
     });
-
-    // Add more UI elements as needed...
+    // Add additional UI elements as needed...
 }
