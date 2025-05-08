@@ -20,7 +20,7 @@ function preload() {
 }
 
 function create() {
-    // Fill background with grass at reasonable size (1/2 scale)
+    // Create grass background at 1/16 scale (0.0625)
     const tileSize = 64;
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
@@ -28,46 +28,51 @@ function create() {
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            if (Math.random() < 0.6) {
+            if (Math.random() < 0.7) { // 70% coverage
                 const grass = this.add.image(
                     x * tileSize + tileSize/2,
-                    y * tileSize + tileSize/2, 
+                    y * tileSize + tileSize/2,
                     'grass'
                 );
-                grass.setScale(0.5); // Now at half size (much more visible)
+                grass.setScale(0.0625); // 1/16 size
                 grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
         }
     }
 
+    // Player setup
     player = this.add.sprite(256, 192, 'hero');
 
-    // Animations (unchanged)
+    // Animations
     this.anims.create({
         key: 'walk_down',
-        frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4'].map(f => ({ key: 'hero', frame: f })),
+        frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
+            .map(f => ({ key: 'hero', frame: f })),
         frameRate: 10,
         repeat: -1
     });
 
     this.anims.create({
         key: 'walk_left',
-        frames: ['walk_left_1', 'walk_left_2', 'walk_left_3', 'walk_left_4'].map(f => ({ key: 'hero', frame: f })),
+        frames: ['walk_left_1', 'walk_left_2', 'walk_left_3', 'walk_left_4']
+            .map(f => ({ key: 'hero', frame: f })),
         frameRate: 10,
         repeat: -1
     });
 
     this.anims.create({
         key: 'walk_right',
-        frames: ['walk_right_1', 'walk_right_2', 'walk_right_3', 'walk_right_4'].map(f => ({ key: 'hero', frame: f })),
+        frames: ['walk_right_1', 'walk_right_2', 'walk_right_3', 'walk_right_4']
+            .map(f => ({ key: 'hero', frame: f })),
         frameRate: 10,
         repeat: -1
     });
 
     this.anims.create({
         key: 'walk_up',
-        frames: ['walk_up_1', 'walk_up_2', 'walk_up_3', 'walk_up_4'].map(f => ({ key: 'hero', frame: f })),
+        frames: ['walk_up_1', 'walk_up_2', 'walk_up_3', 'walk_up_4']
+            .map(f => ({ key: 'hero', frame: f })),
         frameRate: 10,
         repeat: -1
     });
@@ -78,30 +83,36 @@ function create() {
         frameRate: 1
     });
 
+    // Controls
     cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update() {
     let moving = false;
 
+    // Movement handling
     if (cursors.left.isDown) {
         player.x -= 2;
         player.anims.play('walk_left', true);
         moving = true;
-    } else if (cursors.right.isDown) {
+    } 
+    else if (cursors.right.isDown) {
         player.x += 2;
         player.anims.play('walk_right', true);
         moving = true;
-    } else if (cursors.up.isDown) {
+    } 
+    else if (cursors.up.isDown) {
         player.y -= 2;
         player.anims.play('walk_up', true);
         moving = true;
-    } else if (cursors.down.isDown) {
+    } 
+    else if (cursors.down.isDown) {
         player.y += 2;
         player.anims.play('walk_down', true);
         moving = true;
     }
 
+    // Idle state
     if (!moving) {
         player.anims.play('idle_down', true);
     }
