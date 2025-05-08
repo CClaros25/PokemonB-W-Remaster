@@ -45,44 +45,67 @@ function create() {
     const grassGroup = this.add.group();
     const treeGroup = this.add.group();
 
+    const occupiedTreeTiles = new Set();
+
     const patchCount = 30;
     for (let i = 0; i < patchCount; i++) {
         const patchX = Phaser.Math.Between(1, cols - 3);
         const patchY = Phaser.Math.Between(1, rows - 3);
         const patchSize = Phaser.Math.Between(6, 9);
 
-        let hasTree = Math.random() < 0.5; // 50% chance for a tree in the patch
+        let hasTree = Math.random() < 0.5; // 50% chance to spawn a tree
         let treePlaced = false;
+        let treeTileKey = null;
+
+        if (hasTree) {
+            // Decide tree position in the patch (relative to patchX, patchY)
+            const treeOffsetX = Phaser.Math.Between(-1, 1);
+            const treeOffsetY = Phaser.Math.Between(-1, 1);
+            const tx = patchX + treeOffsetX;
+            const ty = patchY + treeOffsetY;
+            treeTileKey = `${tx},${ty}`;
+            occupiedTreeTiles.add(treeTileKey);
+        }
 
         for (let j = 0; j < patchSize; j++) {
             const offsetX = Phaser.Math.Between(-1, 1);
             const offsetY = Phaser.Math.Between(-1, 1);
-            const x = (patchX + offsetX) * tileSize + tileSize / 2;
-            const y = (patchY + offsetY) * tileSize + tileSize / 2;
+            const gx = patchX + offsetX;
+            const gy = patchY + offsetY;
+            const tileKey = `${gx},${gy}`;
+
+            // Skip if this tile is reserved for a tree
+            if (occupiedTreeTiles.has(tileKey)) continue;
+
+            const x = gx * tileSize + tileSize / 2;
+            const y = gy * tileSize + tileSize / 2;
 
             const grass = this.add.image(x, y, 'grass');
             grass.setScale(0.125);
             grass.setOrigin(0.5);
-            grass.setDepth(0); // Grass at the back layer
+            grass.setDepth(0); // Behind everything
             grassGroup.add(grass);
+        }
 
-            // Place one tree per patch, if selected for that patch
-            if (hasTree && !treePlaced && Math.random() < 0.3) {
-                const tree = this.add.image(x, y - 20, 'tree'); // Slight upward offset for overlap effect
-                tree.setScale(0.4); // Bigger tree
-                tree.setOrigin(0.5, 1); // Bottom-center anchor
-                tree.setDepth(2); // Trees on top of player
-                treeGroup.add(tree);
-                treePlaced = true;
-            }
+        // Now add the tree (once per patch)
+        if (hasTree && treeTileKey) {
+            const [tx, ty] = treeTileKey.split(',').map(Number);
+            const x = tx * tileSize + tileSize / 2;
+            const y = ty * tileSize + tileSize / 2;
+
+            const tree = this.add.image(x, y - 20, 'tree');
+            tree.setScale(0.6); // Bigger tree
+            tree.setOrigin(0.5, 1); // Bottom center
+            tree.setDepth(2); // In front of player
+            treeGroup.add(tree);
         }
     }
 
-    // Player setup: Added after patches so order doesn't interfere
+    // Player setup
     player = this.add.sprite(256, 192, 'hero');
-    player.setDepth(1); // Player in front of grass but behind trees
+    player.setDepth(1); // Between grass and trees
 
-    // Define animations for the player
+    // Animations
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
@@ -123,7 +146,6 @@ function create() {
 
     cursors = this.input.keyboard.createCursorKeys();
 }
-
 function update() {
     let moving = false;
     const speed = 2;
