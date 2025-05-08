@@ -20,7 +20,7 @@ function preload() {
 }
 
 function create() {
-    // Fill background with randomly placed tiny grass
+    // Fill background with grass at reasonable size (1/2 scale)
     const tileSize = 64;
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
@@ -34,7 +34,7 @@ function create() {
                     y * tileSize + tileSize/2, 
                     'grass'
                 );
-                grass.setScale(0.125); // 1/64th size
+                grass.setScale(0.5); // Now at half size (much more visible)
                 grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
@@ -43,7 +43,7 @@ function create() {
 
     player = this.add.sprite(256, 192, 'hero');
 
-    // Animation configurations
+    // Animations (unchanged)
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4'].map(f => ({ key: 'hero', frame: f })),
@@ -88,18 +88,15 @@ function update() {
         player.x -= 2;
         player.anims.play('walk_left', true);
         moving = true;
-    } 
-    else if (cursors.right.isDown) {
+    } else if (cursors.right.isDown) {
         player.x += 2;
         player.anims.play('walk_right', true);
         moving = true;
-    } 
-    else if (cursors.up.isDown) {
+    } else if (cursors.up.isDown) {
         player.y -= 2;
         player.anims.play('walk_up', true);
         moving = true;
-    } 
-    else if (cursors.down.isDown) {
+    } else if (cursors.down.isDown) {
         player.y += 2;
         player.anims.play('walk_down', true);
         moving = true;
