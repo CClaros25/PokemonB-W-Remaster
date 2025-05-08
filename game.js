@@ -15,36 +15,57 @@ const game = new Phaser.Game(config);
 let player, cursors;
 
 function preload() {
-    this.load.spritesheet('hero', 'sCrkzvs.png', {
-        frameWidth: 64,
-        frameHeight: 64
-    });
+    this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
 }
 
 function create() {
     player = this.add.sprite(128, 128, 'hero');
 
+    // Use exact frame names from XML
     this.anims.create({
         key: 'walk_down',
-        frames: this.anims.generateFrameNumbers('hero', { start: 0, end: 3 }),
+        frames: [
+            { key: 'hero', frame: 'walk_down_0' },
+            { key: 'hero', frame: 'walk_down_1' },
+            { key: 'hero', frame: 'walk_down_2' },
+            { key: 'hero', frame: 'walk_down_3' },
+        ],
         frameRate: 10,
         repeat: -1
     });
+
     this.anims.create({
         key: 'walk_left',
-        frames: this.anims.generateFrameNumbers('hero', { start: 4, end: 7 }),
+        frames: [
+            { key: 'hero', frame: 'walk_left_0' },
+            { key: 'hero', frame: 'walk_left_1' },
+            { key: 'hero', frame: 'walk_left_2' },
+            { key: 'hero', frame: 'walk_left_3' },
+        ],
         frameRate: 10,
         repeat: -1
     });
+
     this.anims.create({
         key: 'walk_right',
-        frames: this.anims.generateFrameNumbers('hero', { start: 8, end: 11 }),
+        frames: [
+            { key: 'hero', frame: 'walk_right_0' },
+            { key: 'hero', frame: 'walk_right_1' },
+            { key: 'hero', frame: 'walk_right_2' },
+            { key: 'hero', frame: 'walk_right_3' },
+        ],
         frameRate: 10,
         repeat: -1
     });
+
     this.anims.create({
         key: 'walk_up',
-        frames: this.anims.generateFrameNumbers('hero', { start: 12, end: 15 }),
+        frames: [
+            { key: 'hero', frame: 'walk_up_0' },
+            { key: 'hero', frame: 'walk_up_1' },
+            { key: 'hero', frame: 'walk_up_2' },
+            { key: 'hero', frame: 'walk_up_3' },
+        ],
         frameRate: 10,
         repeat: -1
     });
