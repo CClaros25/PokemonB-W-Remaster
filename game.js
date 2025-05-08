@@ -1,6 +1,6 @@
 const config = {
     type: Phaser.AUTO,
-    width: 1024, // Actually doubled size (original 512x384 -> now 1024x768)
+    width: 1024,
     height: 768,
     pixelArt: true,
     scene: {
@@ -16,22 +16,28 @@ let player, cursors;
 
 function preload() {
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
-    this.load.image('grass', 'grass.png'); // Simplified path - make sure grass.png is in same directory
+    this.load.image('grass', 'grass.png');
 }
 
 function create() {
-    // Fill background with randomly placed grass
-    const tileSize = 64;
+    // Fill background with randomly placed grass (now scaled down)
+    const tileSize = 64; // Keep original placement grid size
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
     const grassGroup = this.add.group();
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            // Randomly choose whether to place grass
             if (Math.random() < 0.6) {
-                grassGroup.create(x * tileSize, y * tileSize, 'grass')
-                    .setOrigin(0, 0);
+                // Create grass with smaller size
+                const grass = this.add.image(
+                    x * tileSize + tileSize/2, // Center in tile
+                    y * tileSize + tileSize/2, 
+                    'grass'
+                );
+                grass.setScale(0.5); // Scale down to half size
+                grass.setOrigin(0.5); // Center the origin
+                grassGroup.add(grass);
             }
         }
     }
@@ -66,7 +72,6 @@ function create() {
         repeat: -1
     });
 
-    // Add idle animations or set default frame
     this.anims.create({
         key: 'idle_down',
         frames: [{ key: 'hero', frame: 'walk_down_1' }],
@@ -98,6 +103,6 @@ function update() {
     }
 
     if (!moving) {
-        player.anims.play('idle_down', true); // Set to idle animation
+        player.anims.play('idle_down', true);
     }
 }
