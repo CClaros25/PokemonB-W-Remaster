@@ -21,14 +21,14 @@ function preload() {
 function create() {
     player = this.add.sprite(128, 128, 'hero');
 
-    // Use exact frame names from XML
+    // Animations based on your XML frame names
     this.anims.create({
         key: 'walk_down',
         frames: [
-            { key: 'hero', frame: 'walk_down_0' },
             { key: 'hero', frame: 'walk_down_1' },
             { key: 'hero', frame: 'walk_down_2' },
             { key: 'hero', frame: 'walk_down_3' },
+            { key: 'hero', frame: 'walk_down_4' },
         ],
         frameRate: 10,
         repeat: -1
@@ -37,10 +37,10 @@ function create() {
     this.anims.create({
         key: 'walk_left',
         frames: [
-            { key: 'hero', frame: 'walk_left_0' },
             { key: 'hero', frame: 'walk_left_1' },
             { key: 'hero', frame: 'walk_left_2' },
             { key: 'hero', frame: 'walk_left_3' },
+            { key: 'hero', frame: 'walk_left_4' },
         ],
         frameRate: 10,
         repeat: -1
@@ -49,10 +49,10 @@ function create() {
     this.anims.create({
         key: 'walk_right',
         frames: [
-            { key: 'hero', frame: 'walk_right_0' },
             { key: 'hero', frame: 'walk_right_1' },
             { key: 'hero', frame: 'walk_right_2' },
             { key: 'hero', frame: 'walk_right_3' },
+            { key: 'hero', frame: 'walk_right_4' },
         ],
         frameRate: 10,
         repeat: -1
@@ -61,10 +61,10 @@ function create() {
     this.anims.create({
         key: 'walk_up',
         frames: [
-            { key: 'hero', frame: 'walk_up_0' },
             { key: 'hero', frame: 'walk_up_1' },
             { key: 'hero', frame: 'walk_up_2' },
             { key: 'hero', frame: 'walk_up_3' },
+            { key: 'hero', frame: 'walk_up_4' },
         ],
         frameRate: 10,
         repeat: -1
