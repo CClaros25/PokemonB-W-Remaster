@@ -20,7 +20,7 @@ function preload() {
 }
 
 function create() {
-    // Original layout with 1/10 scale grass
+    // Original layout with 1/8 scale grass
     const tileSize = 64;
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
@@ -28,13 +28,13 @@ function create() {
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            if (Math.random() < 0.7) {
+            if (Math.random() < 0.6) {
                 const grass = this.add.image(
                     x * tileSize + tileSize/2,
                     y * tileSize + tileSize/2,
                     'grass'
                 );
-                grass.setScale(0.125); // 1/10 scale
+                grass.setScale(0.125); // 1/8 scale
                 grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
