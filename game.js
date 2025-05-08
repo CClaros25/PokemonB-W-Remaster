@@ -28,13 +28,13 @@ function create() {
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            if (Math.random() < 0.6) {
+            if (Math.random() < 0.7) {
                 const grass = this.add.image(
                     x * tileSize + tileSize/2,
                     y * tileSize + tileSize/2,
                     'grass'
                 );
-                grass.setScale(0.1); // 1/10 scale
+                grass.setScale(0.15); // 1/10 scale
                 grass.setOrigin(0.5);
                 grassGroup.add(grass);
             }
