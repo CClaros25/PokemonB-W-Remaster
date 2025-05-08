@@ -20,31 +20,31 @@ function preload() {
 }
 
 function create() {
-    // Create grass background at 1/16 scale (0.0625)
-    const tileSize = 64;
+    // Original layout with 1/16 scale grass
+    const tileSize = 64; // Original tile size
     const cols = Math.floor(config.width / tileSize);
     const rows = Math.floor(config.height / tileSize);
     const grassGroup = this.add.group();
 
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            if (Math.random() < 0.7) { // 70% coverage
+            if (Math.random() < 0.6) { // Original 60% density
                 const grass = this.add.image(
-                    x * tileSize + tileSize/2,
+                    x * tileSize + tileSize/2, // Original centered position
                     y * tileSize + tileSize/2,
                     'grass'
                 );
-                grass.setScale(0.0625); // 1/16 size
-                grass.setOrigin(0.5);
+                grass.setScale(0.0625); // 1/16 scale
+                grass.setOrigin(0.5); // Center origin
                 grassGroup.add(grass);
             }
         }
     }
 
-    // Player setup
+    // Player setup (unchanged)
     player = this.add.sprite(256, 192, 'hero');
 
-    // Animations
+    // Original animations
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
@@ -83,36 +83,33 @@ function create() {
         frameRate: 1
     });
 
-    // Controls
+    // Original controls
     cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update() {
+    // Original movement code
     let moving = false;
+    const speed = 2;
 
-    // Movement handling
     if (cursors.left.isDown) {
-        player.x -= 2;
+        player.x -= speed;
         player.anims.play('walk_left', true);
         moving = true;
-    } 
-    else if (cursors.right.isDown) {
-        player.x += 2;
+    } else if (cursors.right.isDown) {
+        player.x += speed;
         player.anims.play('walk_right', true);
         moving = true;
-    } 
-    else if (cursors.up.isDown) {
-        player.y -= 2;
+    } else if (cursors.up.isDown) {
+        player.y -= speed;
         player.anims.play('walk_up', true);
         moving = true;
-    } 
-    else if (cursors.down.isDown) {
-        player.y += 2;
+    } else if (cursors.down.isDown) {
+        player.y += speed;
         player.anims.play('walk_down', true);
         moving = true;
     }
 
-    // Idle state
     if (!moving) {
         player.anims.play('idle_down', true);
     }
