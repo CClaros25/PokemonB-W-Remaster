@@ -40,7 +40,7 @@ function preload() {
 // Your original create function with 1/8 scale grass
 function create() {
     // Grass placement (1/8 scale)
-    const tileSize = 64;
+    const tileSize = 128;
     const cols = Math.floor(this.sys.game.config.width / tileSize);
     const rows = Math.floor(this.sys.game.config.height / tileSize);
     const grassGroup = this.add.group();
