@@ -5,7 +5,7 @@ const assets = {
     // You can add more: tree: new Image(), etc.
 };
 assets.player.src = 'images/player.gif'; // or player.png (spritesheet preferred)
-assets.grass.src = 'images/grass.gif';
+assets.grass.src = 'images/grass.png';
 
 // Canvas setup
 const canvas = document.getElementById('gameCanvas');
