@@ -92,7 +92,7 @@ function create() {
             const y = ty * tileSize + tileSize / 2;
 
             const tree = this.add.image(x, y - 20, 'tree');
-            tree.setScale(0.6); // Bigger tree
+            tree.setScale(2); // Bigger tree
             tree.setOrigin(0.5, 1); // Bottom center
             tree.setDepth(2); // In front of player
             treeGroup.add(tree);
