@@ -18,6 +18,16 @@ const mainConfig = {
     }
 };
 
+// Add this function (basic working version)
+function createSidePanel() {
+    // Just a black background (or add your content here)
+    this.add.rectangle(0, 0, 300, 768, 0x333333)
+        .setOrigin(0, 0);
+    
+    console.log("Side panel loaded!"); // Verify it works
+}
+
+// Update sideConfig to use it (keep everything else the same)
 const sideConfig = {
     type: Phaser.AUTO,
     parent: 'side-panel',
@@ -26,7 +36,7 @@ const sideConfig = {
     pixelArt: true,
     backgroundColor: '#333333',
     scene: {
-        create: createSidePanel
+        create: createSidePanel // Now properly defined
     },
     dom: {
         createContainer: true
