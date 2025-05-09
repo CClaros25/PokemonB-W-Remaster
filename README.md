@@ -2,11 +2,11 @@
 
 Simple Phaser 3 project that loads a sprite sheet and moves a character using arrow keys.
 
-## How to Run
+## How to play
 
-1. Clone this repo or download the folder.
-2. Open `index.html` in your browser.
-3. Use Arrow Keys to move the character!
+1.Move around in the grass
+2.You will have a 1/3 chance to run into any pokemon from Gen 1 - Gen 3
+3. Using locatestorage it allows for you caught pokemon to be saved in your pokedex
 
 ## Sprite Info
 
