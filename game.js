@@ -1,47 +1,4 @@
-const mainConfig = {
-    type: Phaser.AUTO,
-    parent: 'main-game',
-    width: 768,
-    height: 768,
-    pixelArt: true,
-    // Removed solid color background
-    scene: {
-        preload,
-        create,
-        update
-    },
-    dom: {
-        createContainer: true
-    },
-    scale: {
-        mode: Phaser.Scale.NONE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-    }
-};
-
-const sideConfig = {
-    type: Phaser.AUTO,
-    parent: 'side-panel',
-    width: 300,
-    height: 284,
-    pixelArt: true,
-    backgroundColor: '#333333',
-    scene: {
-        create: createSidePanel
-    },
-    dom: {
-        createContainer: true
-    },
-    scale: {
-        mode: Phaser.Scale.NONE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-    }
-};
-
-const mainGame = new Phaser.Game(mainConfig);
-const sideGame = new Phaser.Game(sideConfig);
-
-let player, cursors, trees = [], rocks = [];
+// ===== GAME CONSTANTS =====
 const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 48;
 const TREE_WIDTH = 64;
@@ -51,56 +8,42 @@ const ROCK_WIDTH = 32;
 const ROCK_HEIGHT = 32;
 const ROCK_SCALE = 0.6;
 const TILE_SIZE = 64;
+
+// ===== GAME STATE =====
+let player, cursors, trees = [], rocks = [];
 let useFallbackPaths = false;
 
-function preload() {
-    // Load background image
-    this.load.image('background', 'background.png');
-    
-    this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
-    this.load.image('grass', 'grass.png');
-    this.load.image('tree', 'tree.png');
-    this.load.image('rock1', 'rock1.png');
-    this.load.image('rock2', 'rock2.png');
-    
-    this.load.image('main-path', 'main-path.png').on('loaderror', () => {
-        useFallbackPaths = true;
-    });
-    this.load.image('corner-path', 'corner-path.png').on('loaderror', () => {
-        useFallbackPaths = true;
-    });
+// ===== UTILITY FUNCTIONS =====
+function checkCollision(obj1, obj2) {
+    return obj1.x < obj2.x + obj2.width &&
+           obj1.x + obj1.width > obj2.x &&
+           obj1.y < obj2.y + obj2.height &&
+           obj1.y + obj1.height > obj2.y;
 }
 
-function create() {
-    // Add background image (must be first)
-    const bg = this.add.image(
-        this.cameras.main.centerX,
-        this.cameras.main.centerY,
-        'background'
-    );
-    bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
-    bg.setDepth(-1); // Behind everything
+function findStartPosition(cols, rows, occupiedPositions) {
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (occupiedPositions.has(`${x},${y}`)) return { x, y };
+        }
+    }
+    return { x: Math.floor(cols/2), y: Math.floor(rows/2) };
+}
 
-    const cols = Math.floor(this.sys.game.config.width / TILE_SIZE);
-    const rows = Math.floor(this.sys.game.config.height / TILE_SIZE);
-    const grassGroup = this.add.group();
-    const pathGroup = this.add.group();
-    const treeGroup = this.add.group();
-    const rockGroup = this.add.group();
-
-    const occupiedPositions = new Set();
-    
-    generatePath(this, cols, rows, pathGroup, occupiedPositions);
-    generateGrass(this, cols, rows, grassGroup, occupiedPositions);
-    generateTrees(this, cols, rows, treeGroup, occupiedPositions);
-    generateRocks(this, cols, rows, rockGroup, occupiedPositions);
-
-    const startPos = findStartPosition(cols, rows, occupiedPositions);
-    player = this.add.sprite(startPos.x * TILE_SIZE + TILE_SIZE/2, startPos.y * TILE_SIZE + TILE_SIZE/2, 'hero');
-    player.setDepth(player.y + 20);
-
-    setupAnimations(this);
-    cursors = this.input.keyboard.createCursorKeys();
+// ===== PATH GENERATION =====
+function createPathTile(scene, x, y, isCorner = false, rotation = 0) {
+    if (useFallbackPaths) {
+        const tile = scene.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, 0x8B4513);
+        tile.setOrigin(0.5);
+        if (isCorner) tile.fillAlpha = 0.8;
+        if (rotation !== 0) tile.rotation = rotation;
+        return tile;
+    } else {
+        const tile = scene.add.image(x, y, isCorner ? 'corner-path' : 'main-path');
+        tile.setOrigin(0.5);
+        if (rotation !== 0) tile.rotation = rotation;
+        return tile;
+    }
 }
 
 function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
@@ -168,21 +111,7 @@ function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
     }
 }
 
-function createPathTile(scene, x, y, isCorner = false, rotation = 0) {
-    if (useFallbackPaths) {
-        const tile = scene.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, 0x8B4513);
-        tile.setOrigin(0.5);
-        if (isCorner) tile.fillAlpha = 0.8;
-        if (rotation !== 0) tile.rotation = rotation;
-        return tile;
-    } else {
-        const tile = scene.add.image(x, y, isCorner ? 'corner-path' : 'main-path');
-        tile.setOrigin(0.5);
-        if (rotation !== 0) tile.rotation = rotation;
-        return tile;
-    }
-}
-
+// ===== ENVIRONMENT GENERATION =====
 function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
     const clumpCount = 15;
     const minClumpSize = 3;
@@ -341,15 +270,7 @@ function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
     }
 }
 
-function findStartPosition(cols, rows, occupiedPositions) {
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            if (occupiedPositions.has(`${x},${y}`)) return { x, y };
-        }
-    }
-    return { x: Math.floor(cols/2), y: Math.floor(rows/2) };
-}
-
+// ===== ANIMATIONS =====
 function setupAnimations(scene) {
     const anims = [
         { key: 'walk_down', frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4'] },
@@ -383,81 +304,7 @@ function setupAnimations(scene) {
     });
 }
 
-function update() {
-    let moving = false;
-    const speed = 2;
-    let newX = player.x;
-    let newY = player.y;
-    let direction = '';
-
-    if (cursors.left.isDown) {
-        newX -= speed;
-        player.anims.play('walk_left', true);
-        moving = true;
-        direction = 'left';
-    } else if (cursors.right.isDown) {
-        newX += speed;
-        player.anims.play('walk_right', true);
-        moving = true;
-        direction = 'right';
-    } else if (cursors.up.isDown) {
-        newY -= speed;
-        player.anims.play('walk_up', true);
-        moving = true;
-        direction = 'up';
-    } else if (cursors.down.isDown) {
-        newY += speed;
-        player.anims.play('walk_down', true);
-        moving = true;
-        direction = 'down';
-    }
-
-    if (!moving) {
-        if (direction === 'left') player.anims.play('idle_left', true);
-        else if (direction === 'right') player.anims.play('idle_right', true);
-        else if (direction === 'up') player.anims.play('idle_up', true);
-        else player.anims.play('idle_down', true);
-    }
-
-    let canMove = true;
-    const playerBounds = {
-        x: newX - PLAYER_WIDTH/2,
-        y: newY - PLAYER_HEIGHT/2,
-        width: PLAYER_WIDTH,
-        height: PLAYER_HEIGHT
-    };
-
-    for (const tree of trees) {
-        if (checkCollision(playerBounds, tree)) {
-            canMove = false;
-            break;
-        }
-    }
-    
-    for (const rock of rocks) {
-        if (checkCollision(playerBounds, rock)) {
-            canMove = false;
-            break;
-        }
-    }
-
-    if (canMove) {
-        player.x = newX;
-        player.y = newY;
-    }
-
-    player.setDepth(player.y + 20);
-    trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
-    rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
-}
-
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.width &&
-           obj1.x + obj1.width > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + obj1.height > obj2.y;
-}
-
+// ===== SIDE PANEL =====
 function createSidePanel() {
     this.add.text(this.cameras.main.centerX, 30, 'PLAYER STATS', {
         font: '24px Arial',
@@ -511,4 +358,192 @@ function createSidePanel() {
             fill: '#DDDDDD'
         });
     });
+}
+
+// ===== CORE GAME SCENES =====
+function preload() {
+    // Show loading progress
+    const loadingText = this.add.text(
+        this.cameras.main.centerX,
+        this.cameras.main.centerY,
+        'Loading...',
+        { font: '16px Arial', fill: '#ffffff' }
+    ).setOrigin(0.5);
+
+    this.load.on('progress', (value) => {
+        loadingText.setText(`Loading: ${Math.round(value * 100)}%`);
+    });
+
+    // Load assets with error handling
+    this.load.image('background', 'background.png')
+        .on('loaderror', () => console.error("Failed to load background"));
+    
+    this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml')
+        .on('loaderror', () => console.error("Failed to load hero spritesheet"));
+    
+    this.load.image('grass', 'grass.png');
+    this.load.image('tree', 'tree.png');
+    this.load.image('rock1', 'rock1.png');
+    this.load.image('rock2', 'rock2.png');
+    
+    this.load.image('main-path', 'main-path.png')
+        .on('loaderror', () => useFallbackPaths = true);
+    this.load.image('corner-path', 'corner-path.png')
+        .on('loaderror', () => useFallbackPaths = true);
+}
+
+function create() {
+    // Add background
+    const bg = this.add.image(
+        this.cameras.main.centerX,
+        this.cameras.main.centerY,
+        'background'
+    );
+    bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
+    bg.setDepth(-1);
+
+    // Generate world
+    const cols = Math.floor(this.sys.game.config.width / TILE_SIZE);
+    const rows = Math.floor(this.sys.game.config.height / TILE_SIZE);
+    const occupiedPositions = new Set();
+    
+    const grassGroup = this.add.group();
+    const pathGroup = this.add.group();
+    const treeGroup = this.add.group();
+    const rockGroup = this.add.group();
+
+    generatePath(this, cols, rows, pathGroup, occupiedPositions);
+    generateGrass(this, cols, rows, grassGroup, occupiedPositions);
+    generateTrees(this, cols, rows, treeGroup, occupiedPositions);
+    generateRocks(this, cols, rows, rockGroup, occupiedPositions);
+
+    // Create player
+    const startPos = findStartPosition(cols, rows, occupiedPositions);
+    player = this.add.sprite(
+        startPos.x * TILE_SIZE + TILE_SIZE/2,
+        startPos.y * TILE_SIZE + TILE_SIZE/2,
+        'hero'
+    );
+    player.setDepth(player.y + 20);
+
+    // Setup controls and animations
+    setupAnimations(this);
+    cursors = this.input.keyboard.createCursorKeys();
+}
+
+function update() {
+    // Movement handling
+    let moving = false;
+    const speed = 2;
+    let newX = player.x;
+    let newY = player.y;
+    let direction = '';
+
+    if (cursors.left.isDown) {
+        newX -= speed;
+        player.anims.play('walk_left', true);
+        moving = true;
+        direction = 'left';
+    } else if (cursors.right.isDown) {
+        newX += speed;
+        player.anims.play('walk_right', true);
+        moving = true;
+        direction = 'right';
+    } else if (cursors.up.isDown) {
+        newY -= speed;
+        player.anims.play('walk_up', true);
+        moving = true;
+        direction = 'up';
+    } else if (cursors.down.isDown) {
+        newY += speed;
+        player.anims.play('walk_down', true);
+        moving = true;
+        direction = 'down';
+    }
+
+    // Idle animation
+    if (!moving) {
+        if (direction === 'left') player.anims.play('idle_left', true);
+        else if (direction === 'right') player.anims.play('idle_right', true);
+        else if (direction === 'up') player.anims.play('idle_up', true);
+        else player.anims.play('idle_down', true);
+    }
+
+    // Collision detection
+    let canMove = true;
+    const playerBounds = {
+        x: newX - PLAYER_WIDTH/2,
+        y: newY - PLAYER_HEIGHT/2,
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT
+    };
+
+    for (const tree of trees) {
+        if (checkCollision(playerBounds, tree)) {
+            canMove = false;
+            break;
+        }
+    }
+    
+    for (const rock of rocks) {
+        if (checkCollision(playerBounds, rock)) {
+            canMove = false;
+            break;
+        }
+    }
+
+    // Apply movement
+    if (canMove) {
+        player.x = newX;
+        player.y = newY;
+    }
+
+    // Update depths
+    player.setDepth(player.y + 20);
+    trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
+    rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
+}
+
+// ===== GAME CONFIGURATION =====
+const mainConfig = {
+    type: Phaser.AUTO,
+    parent: 'main-game',
+    width: 768,
+    height: 768,
+    pixelArt: true,
+    scene: { preload, create, update },
+    dom: { createContainer: true },
+    scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+};
+
+const sideConfig = {
+    type: Phaser.AUTO,
+    parent: 'side-panel',
+    width: 300,
+    height: 284,
+    pixelArt: true,
+    backgroundColor: '#333333',
+    scene: { create: createSidePanel },
+    dom: { createContainer: true },
+    scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+};
+
+// ===== GAME INITIALIZATION =====
+try {
+    const mainGame = new Phaser.Game(mainConfig);
+    const sideGame = new Phaser.Game(sideConfig);
+    
+    // Debug checks
+    if (!mainGame.isBooted) console.error("Main game failed to initialize!");
+    if (!sideGame.isBooted) console.error("Side panel failed to initialize!");
+    
+    console.log("Games initialized successfully!");
+} catch (error) {
+    console.error("Game initialization failed:", error);
 }
