@@ -362,19 +362,8 @@ function createSidePanel() {
 
 // ===== CORE GAME SCENES =====
 function preload() {
-    // Show loading progress
-    const loadingText = this.add.text(
-        this.cameras.main.centerX,
-        this.cameras.main.centerY,
-        'Loading...',
-        { font: '16px Arial', fill: '#ffffff' }
-    ).setOrigin(0.5);
-
-    this.load.on('progress', (value) => {
-        loadingText.setText(`Loading: ${Math.round(value * 100)}%`);
-    });
-
-    // Load assets with error handling
+    console.log("Loading game assets...");
+    
     this.load.image('background', 'background.png')
         .on('loaderror', () => console.error("Failed to load background"));
     
@@ -387,9 +376,19 @@ function preload() {
     this.load.image('rock2', 'rock2.png');
     
     this.load.image('main-path', 'main-path.png')
-        .on('loaderror', () => useFallbackPaths = true);
+        .on('loaderror', () => {
+            useFallbackPaths = true;
+            console.log("Using fallback paths");
+        });
     this.load.image('corner-path', 'corner-path.png')
-        .on('loaderror', () => useFallbackPaths = true);
+        .on('loaderror', () => {
+            useFallbackPaths = true;
+            console.log("Using fallback paths");
+        });
+
+    this.load.on('complete', () => {
+        console.log("All assets loaded successfully!");
+    });
 }
 
 function create() {
@@ -536,14 +535,13 @@ const sideConfig = {
 
 // ===== GAME INITIALIZATION =====
 try {
+    console.log("Initializing game...");
     const mainGame = new Phaser.Game(mainConfig);
     const sideGame = new Phaser.Game(sideConfig);
     
-    // Debug checks
     if (!mainGame.isBooted) console.error("Main game failed to initialize!");
     if (!sideGame.isBooted) console.error("Side panel failed to initialize!");
-    
-    console.log("Games initialized successfully!");
+    else console.log("Both game instances initialized successfully!");
 } catch (error) {
     console.error("Game initialization failed:", error);
 }
