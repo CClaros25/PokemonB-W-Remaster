@@ -46,34 +46,183 @@ function preload() {
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
     this.load.image('grass', 'grass.png');
     this.load.image('tree', 'tree.png');
+    this.load.image('main-path', 'main-path.png');
+    this.load.image('corner-path', 'corner-path.png');
 }
 
 function create() {
     const cols = Math.floor(this.sys.game.config.width / TILE_SIZE);
     const rows = Math.floor(this.sys.game.config.height / TILE_SIZE);
     const grassGroup = this.add.group();
+    const pathGroup = this.add.group();
     const treeGroup = this.add.group();
 
+    // Track all occupied positions
     const occupiedPositions = new Set();
     
-    for (let x = 0; x < cols; x++) {
-        for (let y = 0; y < rows; y++) {
-            const grassX = x * TILE_SIZE + TILE_SIZE / 2;
-            const grassY = y * TILE_SIZE + TILE_SIZE / 2;
+    // Generate a winding path first
+    generatePath(this, cols, rows, pathGroup, occupiedPositions);
+    
+    // Generate clumpy grass around the path
+    generateGrass(this, cols, rows, grassGroup, occupiedPositions);
+    
+    // Generate trees with proper spacing
+    generateTrees(this, cols, rows, treeGroup, occupiedPositions);
+
+    // Player setup - place on path
+    const startPos = findStartPosition(cols, rows, occupiedPositions);
+    player = this.add.sprite(startPos.x * TILE_SIZE + TILE_SIZE/2, startPos.y * TILE_SIZE + TILE_SIZE/2, 'hero');
+    player.setDepth(player.y + 20);
+
+    // Animations
+    setupAnimations(this);
+
+    cursors = this.input.keyboard.createCursorKeys();
+}
+
+function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
+    // Start path at a random edge
+    const startEdge = Phaser.Math.Between(0, 3);
+    let x, y, dirX, dirY;
+    
+    // Determine starting position and direction
+    switch(startEdge) {
+        case 0: // Top
+            x = Phaser.Math.Between(1, cols-2);
+            y = 0;
+            dirX = 0;
+            dirY = 1;
+            break;
+        case 1: // Right
+            x = cols-1;
+            y = Phaser.Math.Between(1, rows-2);
+            dirX = -1;
+            dirY = 0;
+            break;
+        case 2: // Bottom
+            x = Phaser.Math.Between(1, cols-2);
+            y = rows-1;
+            dirX = 0;
+            dirY = -1;
+            break;
+        case 3: // Left
+            x = 0;
+            y = Phaser.Math.Between(1, rows-2);
+            dirX = 1;
+            dirY = 0;
+            break;
+    }
+    
+    // Generate winding path
+    const pathLength = Phaser.Math.Between(15, 25);
+    let lastDirX = dirX;
+    let lastDirY = dirY;
+    
+    for (let i = 0; i < pathLength; i++) {
+        // Mark current position as occupied
+        occupiedPositions.add(`${x},${y}`);
+        
+        // Place path tile
+        const pathX = x * TILE_SIZE + TILE_SIZE / 2;
+        const pathY = y * TILE_SIZE + TILE_SIZE / 2;
+        
+        // Determine if this is a straight path or corner
+        let pathTile;
+        if (i > 0 && (dirX !== lastDirX || dirY !== lastDirY)) {
+            // Corner tile
+            pathTile = scene.add.image(pathX, pathY, 'corner-path');
+            // Calculate rotation based on direction change
+            let rotation = 0;
+            if (lastDirX === 1 && dirY === 1) rotation = 0; // Right to Down
+            else if (lastDirY === 1 && dirX === -1) rotation = Math.PI/2; // Down to Left
+            else if (lastDirX === -1 && dirY === -1) rotation = Math.PI; // Left to Up
+            else if (lastDirY === -1 && dirX === 1) rotation = -Math.PI/2; // Up to Right
+            pathTile.setRotation(rotation);
+        } else {
+            // Straight path
+            pathTile = scene.add.image(pathX, pathY, 'main-path');
+            if (dirX !== 0) pathTile.setRotation(Math.PI/2); // Horizontal path
+        }
+        pathTile.setOrigin(0.5);
+        pathTile.setDepth(0);
+        pathGroup.add(pathTile);
+        
+        // Random chance to change direction (but not back on itself)
+        if (Phaser.Math.Between(0, 100) < 30 && i > 2) {
+            const possibleDirs = [];
+            if (dirX === 0) {
+                // Currently moving vertically, can turn left or right
+                possibleDirs.push({x: 1, y: 0});
+                possibleDirs.push({x: -1, y: 0});
+            } else {
+                // Currently moving horizontally, can turn up or down
+                possibleDirs.push({x: 0, y: 1});
+                possibleDirs.push({x: 0, y: -1});
+            }
             
-            const grass = this.add.image(grassX, grassY, 'grass');
+            // Filter out directions that would go out of bounds
+            const validDirs = possibleDirs.filter(dir => {
+                const newX = x + dir.x;
+                const newY = y + dir.y;
+                return newX >= 0 && newX < cols && newY >= 0 && newY < rows;
+            });
+            
+            if (validDirs.length > 0) {
+                lastDirX = dirX;
+                lastDirY = dirY;
+                const newDir = Phaser.Math.RND.pick(validDirs);
+                dirX = newDir.x;
+                dirY = newDir.y;
+            }
+        }
+        
+        // Move to next position
+        x += dirX;
+        y += dirY;
+        
+        // Stop if we hit the edge
+        if (x <= 0 || x >= cols-1 || y <= 0 || y >= rows-1) break;
+    }
+}
+
+function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
+    const patchCount = 20;
+    
+    for (let i = 0; i < patchCount; i++) {
+        const patchX = Phaser.Math.Between(1, cols - 2);
+        const patchY = Phaser.Math.Between(1, rows - 2);
+        const patchSize = Phaser.Math.Between(5, 10);
+        
+        for (let j = 0; j < patchSize; j++) {
+            const offsetX = Phaser.Math.Between(-2, 2);
+            const offsetY = Phaser.Math.Between(-2, 2);
+            const gx = patchX + offsetX;
+            const gy = patchY + offsetY;
+            
+            // Skip if this tile is occupied or out of bounds
+            if (gx < 0 || gx >= cols || gy < 0 || gy >= rows || 
+                occupiedPositions.has(`${gx},${gy}`)) continue;
+            
+            const x = gx * TILE_SIZE + TILE_SIZE / 2;
+            const y = gy * TILE_SIZE + TILE_SIZE / 2;
+            
+            const grass = scene.add.image(x, y, 'grass');
             grass.setScale(0.125);
             grass.setOrigin(0.5);
             grass.setDepth(0);
             grassGroup.add(grass);
         }
     }
+}
 
-    const patchCount = 30;
+function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
+    const patchCount = 20;
+    
     for (let i = 0; i < patchCount; i++) {
-        const patchX = Phaser.Math.Between(2, cols - 4);
-        const patchY = Phaser.Math.Between(2, rows - 4);
+        const patchX = Phaser.Math.Between(2, cols - 3);
+        const patchY = Phaser.Math.Between(2, rows - 3);
         
+        // Check if this patch can have a tree (1 tile spacing)
         let canPlaceTree = true;
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
@@ -91,7 +240,7 @@ function create() {
             const treeX = patchX * TILE_SIZE + TILE_SIZE / 2;
             const treeY = patchY * TILE_SIZE + TILE_SIZE / 2;
             
-            const tree = this.add.image(treeX, treeY - 20, 'tree');
+            const tree = scene.add.image(treeX, treeY - 20, 'tree');
             tree.setScale(2);
             tree.setOrigin(0.5, 1);
             tree.setDepth(treeY);
@@ -105,6 +254,7 @@ function create() {
                 height: TREE_HITBOX_HEIGHT
             });
             
+            // Mark this tile and surrounding tiles as occupied
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dy = -1; dy <= 1; dy++) {
                     occupiedPositions.add(`${patchX + dx},${patchY + dy}`);
@@ -112,12 +262,23 @@ function create() {
             }
         }
     }
+}
 
-    player = this.add.sprite(256, 192, 'hero');
-    player.setDepth(player.y + 20);
+function findStartPosition(cols, rows, occupiedPositions) {
+    // Find a path tile to start the player on
+    for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+            if (occupiedPositions.has(`${x},${y}`)) {
+                return { x, y };
+            }
+        }
+    }
+    // Fallback to center if no path found (shouldn't happen)
+    return { x: Math.floor(cols/2), y: Math.floor(rows/2) };
+}
 
-    // Animations
-    this.anims.create({
+function setupAnimations(scene) {
+    scene.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
             .map(f => ({ key: 'hero', frame: f })),
@@ -125,7 +286,7 @@ function create() {
         repeat: -1
     });
 
-    this.anims.create({
+    scene.anims.create({
         key: 'walk_left',
         frames: ['walk_left_1', 'walk_left_2', 'walk_left_3', 'walk_left_4']
             .map(f => ({ key: 'hero', frame: f })),
@@ -133,7 +294,7 @@ function create() {
         repeat: -1
     });
 
-    this.anims.create({
+    scene.anims.create({
         key: 'walk_right',
         frames: ['walk_right_1', 'walk_right_2', 'walk_right_3', 'walk_right_4']
             .map(f => ({ key: 'hero', frame: f })),
@@ -141,7 +302,7 @@ function create() {
         repeat: -1
     });
 
-    this.anims.create({
+    scene.anims.create({
         key: 'walk_up',
         frames: ['walk_up_1', 'walk_up_2', 'walk_up_3', 'walk_up_4']
             .map(f => ({ key: 'hero', frame: f })),
@@ -149,31 +310,29 @@ function create() {
         repeat: -1
     });
 
-    this.anims.create({
+    scene.anims.create({
         key: 'idle_down',
         frames: [{ key: 'hero', frame: 'walk_down_1' }],
         frameRate: 1
     });
 
-    this.anims.create({
+    scene.anims.create({
         key: 'idle_left',
         frames: [{ key: 'hero', frame: 'walk_left_1' }],
         frameRate: 1
     });
 
-    this.anims.create({
+    scene.anims.create({
         key: 'idle_right',
         frames: [{ key: 'hero', frame: 'walk_right_1' }],
         frameRate: 1
     });
 
-    this.anims.create({
+    scene.anims.create({
         key: 'idle_up',
         frames: [{ key: 'hero', frame: 'walk_up_1' }],
         frameRate: 1
     });
-
-    cursors = this.input.keyboard.createCursorKeys();
 }
 
 function update() {
