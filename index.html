@@ -19,22 +19,23 @@
     #container {
       display: flex;
       flex-direction: row;
-      align-items: flex-start;
+      align-items: center; /* Changed from flex-start to center */
       gap: 20px;
       padding: 20px;
       box-sizing: border-box;
-      max-width: 1100px; /* 768 + 300 + gap */
+      max-width: 1100px;
     }
 
     #main-game {
       width: 768px;
       height: 768px;
       box-shadow: 0 0 20px rgba(0,0,0,0.7);
+      background: #7CFC00; /* Fallback if canvas fails */
     }
 
     #side-panel {
       width: 300px;
-      height: 384px;
+      height: 768px; /* Match main game height */
       background: #222;
       border-radius: 5px;
       box-shadow: 0 0 20px rgba(0,0,0,0.7);
@@ -48,21 +49,19 @@
     canvas {
       display: block;
       image-rendering: pixelated;
+      width: 100%;
+      height: 100%;
     }
 
     /* Responsive adjustments */
     @media (max-width: 1100px) {
       #container {
         flex-direction: column;
-        align-items: center;
-        gap: 10px;
       }
       
       #side-panel {
-        width: 384px;
-        height: auto;
-        min-height: 200px;
-        margin-left: 0;
+        width: 768px;
+        height: 300px;
         border-left: none;
         border-top: 2px solid #444;
       }
@@ -76,5 +75,17 @@
   </div>
 
   <script src="game.js"></script>
+  
+  <!-- Add this temporary debug script -->
+  <script>
+    window.addEventListener('load', function() {
+      console.log('DOM fully loaded');
+      if (!document.querySelector('canvas')) {
+        console.error('No canvas elements found!');
+      } else {
+        console.log('Canvas elements detected:', document.querySelectorAll('canvas').length);
+      }
+    });
+  </script>
 </body>
 </html>
