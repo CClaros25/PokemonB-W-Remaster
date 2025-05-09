@@ -22,8 +22,8 @@ const mainConfig = {
 const sideConfig = {
     type: Phaser.AUTO,
     parent: 'side-panel',
-    width: 300,
-    height: 284,
+    width: 300, 
+    height: 768, // Match HTML height
     pixelArt: true,
     backgroundColor: '#333333',
     scene: {
