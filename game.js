@@ -1,7 +1,7 @@
 const mainConfig = {
     type: Phaser.AUTO,
-    parent: 'main-game', // Attach to left div
-    width: 768,          // Keep this your main game width
+    parent: 'main-game',
+    width: 768,
     height: 768,
     pixelArt: true,
     backgroundColor: '#7CFC00',
@@ -14,8 +14,8 @@ const mainConfig = {
 
 const sideConfig = {
     type: Phaser.AUTO,
-    parent: 'side-panel', // Attach to right div
-    width: 256,           // Smaller side panel
+    parent: 'side-panel',
+    width: 256,
     height: 284,
     pixelArt: true,
     backgroundColor: '#333333',
@@ -24,16 +24,15 @@ const sideConfig = {
     }
 };
 
-// Create both game instances
 const mainGame = new Phaser.Game(mainConfig);
 const sideGame = new Phaser.Game(sideConfig);
 
-let player, cursors;
+let player, cursors, trees = [];
 
 function preload() {
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
     this.load.image('grass', 'grass.png');
-    this.load.image('tree', 'tree.png'); // Load tree texture
+    this.load.image('tree', 'tree.png');
 }
 
 function create() {
@@ -51,12 +50,10 @@ function create() {
         const patchY = Phaser.Math.Between(1, rows - 3);
         const patchSize = Phaser.Math.Between(6, 9);
 
-        let hasTree = Math.random() < 0.5; // 50% chance to spawn a tree
-        let treePlaced = false;
+        let hasTree = Math.random() < 0.5;
         let treeTileKey = null;
 
         if (hasTree) {
-            // Decide tree position in the patch (relative to patchX, patchY)
             const treeOffsetX = Phaser.Math.Between(-1, 1);
             const treeOffsetY = Phaser.Math.Between(-1, 1);
             const tx = patchX + treeOffsetX;
@@ -72,7 +69,6 @@ function create() {
             const gy = patchY + offsetY;
             const tileKey = `${gx},${gy}`;
 
-            // Skip if this tile is reserved for a tree
             if (occupiedTreeTiles.has(tileKey)) continue;
 
             const x = gx * tileSize + tileSize / 2;
@@ -81,27 +77,26 @@ function create() {
             const grass = this.add.image(x, y, 'grass');
             grass.setScale(0.125);
             grass.setOrigin(0.5);
-            grass.setDepth(0); // Behind everything
+            grass.setDepth(0);
             grassGroup.add(grass);
         }
 
-        // Now add the tree (once per patch)
         if (hasTree && treeTileKey) {
             const [tx, ty] = treeTileKey.split(',').map(Number);
             const x = tx * tileSize + tileSize / 2;
             const y = ty * tileSize + tileSize / 2;
 
             const tree = this.add.image(x, y - 20, 'tree');
-            tree.setScale(2); // Bigger tree
-            tree.setOrigin(0.5, 1); // Bottom center
-            tree.setDepth(2); // In front of player
+            tree.setScale(2);
+            tree.setOrigin(0.5, 1);
+            tree.setDepth(y); // Set initial depth based on y-position
             treeGroup.add(tree);
+            trees.push(tree); // Add to trees array for depth sorting
         }
     }
 
-    // Player setup
     player = this.add.sprite(256, 192, 'hero');
-    player.setDepth(1); // Between grass and trees
+    player.setDepth(player.y + 20); // Set initial player depth
 
     // Animations
     this.anims.create({
@@ -144,6 +139,7 @@ function create() {
 
     cursors = this.input.keyboard.createCursorKeys();
 }
+
 function update() {
     let moving = false;
     const speed = 2;
@@ -169,6 +165,14 @@ function update() {
     if (!moving) {
         player.anims.play('idle_down', true);
     }
+
+    // Update depths based on y-position
+    player.setDepth(player.y + 20); // Player depth (adjust +20 as needed)
+    
+    // Update tree depths (optional - only needed if trees move)
+    trees.forEach(tree => {
+        tree.setDepth(tree.y);
+    });
 }
 
 function createSidePanel() {
@@ -191,5 +195,4 @@ function createSidePanel() {
         font: '18px Arial',
         fill: '#FFFFFF'
     });
-    // Add additional UI elements as needed...
 }
