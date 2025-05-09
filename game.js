@@ -28,6 +28,10 @@ const mainGame = new Phaser.Game(mainConfig);
 const sideGame = new Phaser.Game(sideConfig);
 
 let player, cursors, trees = [];
+const PLAYER_WIDTH = 32; // Approximate player width
+const PLAYER_HEIGHT = 48; // Approximate player height
+const TREE_WIDTH = 64; // Approximate tree width
+const TREE_HEIGHT = 96; // Approximate tree height
 
 function preload() {
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
@@ -89,16 +93,22 @@ function create() {
             const tree = this.add.image(x, y - 20, 'tree');
             tree.setScale(2);
             tree.setOrigin(0.5, 1);
-            tree.setDepth(y); // Set initial depth based on y-position
+            tree.setDepth(y);
             treeGroup.add(tree);
-            trees.push(tree); // Add to trees array for depth sorting
+            trees.push({
+                sprite: tree,
+                x: x,
+                y: y - 20,
+                width: TREE_WIDTH,
+                height: TREE_HEIGHT
+            });
         }
     }
 
     player = this.add.sprite(256, 192, 'hero');
-    player.setDepth(player.y + 20); // Set initial player depth
+    player.setDepth(player.y + 20);
 
-    // Animations
+    // Animations (unchanged from your original code)
     this.anims.create({
         key: 'walk_down',
         frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
@@ -143,21 +153,23 @@ function create() {
 function update() {
     let moving = false;
     const speed = 2;
+    let newX = player.x;
+    let newY = player.y;
 
     if (cursors.left.isDown) {
-        player.x -= speed;
+        newX -= speed;
         player.anims.play('walk_left', true);
         moving = true;
     } else if (cursors.right.isDown) {
-        player.x += speed;
+        newX += speed;
         player.anims.play('walk_right', true);
         moving = true;
     } else if (cursors.up.isDown) {
-        player.y -= speed;
+        newY -= speed;
         player.anims.play('walk_up', true);
         moving = true;
     } else if (cursors.down.isDown) {
-        player.y += speed;
+        newY += speed;
         player.anims.play('walk_down', true);
         moving = true;
     }
@@ -166,13 +178,39 @@ function update() {
         player.anims.play('idle_down', true);
     }
 
-    // Update depths based on y-position
-    player.setDepth(player.y + 20); // Player depth (adjust +20 as needed)
-    
-    // Update tree depths (optional - only needed if trees move)
+    // Check for tree collisions before moving
+    let canMove = true;
+    const playerBounds = {
+        x: newX - PLAYER_WIDTH/2,
+        y: newY - PLAYER_HEIGHT/2,
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT
+    };
+
+    for (const tree of trees) {
+        if (checkCollision(playerBounds, tree)) {
+            canMove = false;
+            break;
+        }
+    }
+
+    if (canMove) {
+        player.x = newX;
+        player.y = newY;
+    }
+
+    // Update depths
+    player.setDepth(player.y + 20);
     trees.forEach(tree => {
-        tree.setDepth(tree.y);
+        tree.sprite.setDepth(tree.y);
     });
+}
+
+function checkCollision(obj1, obj2) {
+    return obj1.x < obj2.x + obj2.width &&
+           obj1.x + obj1.width > obj2.x &&
+           obj1.y < obj2.y + obj2.height &&
+           obj1.y + obj1.height > obj2.y;
 }
 
 function createSidePanel() {
