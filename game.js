@@ -63,7 +63,7 @@ function create() {
     // Generate a winding path first
     generatePath(this, cols, rows, pathGroup, occupiedPositions);
     
-    // Generate clumpy grass around the path
+    // Generate clumpy grass around the path (with proper spacing)
     generateGrass(this, cols, rows, grassGroup, occupiedPositions);
     
     // Generate trees with proper spacing
@@ -186,20 +186,50 @@ function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
 }
 
 function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
-    const patchCount = 20;
+    const clumpCount = 15;
+    const minClumpSize = 3;
+    const maxClumpSize = 8;
+    const clumpSpacing = 3;
     
-    for (let i = 0; i < patchCount; i++) {
-        const patchX = Phaser.Math.Between(1, cols - 2);
-        const patchY = Phaser.Math.Between(1, rows - 2);
-        const patchSize = Phaser.Math.Between(5, 10);
+    const clumpCenters = [];
+    
+    for (let i = 0; i < clumpCount; i++) {
+        let attempts = 0;
+        let validPosition = false;
+        let centerX, centerY;
         
-        for (let j = 0; j < patchSize; j++) {
-            const offsetX = Phaser.Math.Between(-2, 2);
-            const offsetY = Phaser.Math.Between(-2, 2);
-            const gx = patchX + offsetX;
-            const gy = patchY + offsetY;
+        while (attempts < 50 && !validPosition) {
+            centerX = Phaser.Math.Between(1, cols - 2);
+            centerY = Phaser.Math.Between(1, rows - 2);
+            validPosition = true;
             
-            // Skip if this tile is occupied or out of bounds
+            for (const center of clumpCenters) {
+                const dx = Math.abs(center.x - centerX);
+                const dy = Math.abs(center.y - centerY);
+                if (dx < clumpSpacing && dy < clumpSpacing) {
+                    validPosition = false;
+                    break;
+                }
+            }
+            
+            if (occupiedPositions.has(`${centerX},${centerY}`)) {
+                validPosition = false;
+            }
+            
+            attempts++;
+        }
+        
+        if (!validPosition) continue;
+        
+        clumpCenters.push({ x: centerX, y: centerY });
+        const clumpSize = Phaser.Math.Between(minClumpSize, maxClumpSize);
+        
+        for (let j = 0; j < clumpSize; j++) {
+            const offsetX = Phaser.Math.Between(-1, 1);
+            const offsetY = Phaser.Math.Between(-1, 1);
+            const gx = centerX + offsetX;
+            const gy = centerY + offsetY;
+            
             if (gx < 0 || gx >= cols || gy < 0 || gy >= rows || 
                 occupiedPositions.has(`${gx},${gy}`)) continue;
             
@@ -222,7 +252,6 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
         const patchX = Phaser.Math.Between(2, cols - 3);
         const patchY = Phaser.Math.Between(2, rows - 3);
         
-        // Check if this patch can have a tree (1 tile spacing)
         let canPlaceTree = true;
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
@@ -254,7 +283,6 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
                 height: TREE_HITBOX_HEIGHT
             });
             
-            // Mark this tile and surrounding tiles as occupied
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dy = -1; dy <= 1; dy++) {
                     occupiedPositions.add(`${patchX + dx},${patchY + dy}`);
@@ -265,7 +293,6 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
 }
 
 function findStartPosition(cols, rows, occupiedPositions) {
-    // Find a path tile to start the player on
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
             if (occupiedPositions.has(`${x},${y}`)) {
@@ -273,7 +300,6 @@ function findStartPosition(cols, rows, occupiedPositions) {
             }
         }
     }
-    // Fallback to center if no path found (shouldn't happen)
     return { x: Math.floor(cols/2), y: Math.floor(rows/2) };
 }
 
@@ -405,17 +431,14 @@ function checkCollision(obj1, obj2) {
 }
 
 function createSidePanel() {
-    // Centered title
     this.add.text(this.cameras.main.centerX, 30, 'PLAYER STATS', {
         font: '24px Arial',
         fill: '#FFFFFF'
     }).setOrigin(0.5);
 
-    // Stats with icons
     const statsY = 80;
     const statSpacing = 40;
     
-    // Health
     this.add.text(20, statsY, '❤ Health:', {
         font: '18px Arial',
         fill: '#FFFFFF'
@@ -425,7 +448,6 @@ function createSidePanel() {
         fill: '#FF5555'
     });
 
-    // Level
     this.add.text(20, statsY + statSpacing, '⚡ Level:', {
         font: '18px Arial',
         fill: '#FFFFFF'
@@ -435,7 +457,6 @@ function createSidePanel() {
         fill: '#FFFFFF'
     });
 
-    // XP
     this.add.text(20, statsY + statSpacing * 2, '✦ XP:', {
         font: '18px Arial',
         fill: '#FFFFFF'
@@ -445,13 +466,11 @@ function createSidePanel() {
         fill: '#55FF55'
     });
 
-    // Inventory title
     this.add.text(this.cameras.main.centerX, 200, 'INVENTORY', {
         font: '20px Arial',
         fill: '#FFFFFF'
     }).setOrigin(0.5);
 
-    // Inventory items
     const inventoryItems = [
         { name: 'Sword', icon: '⚔' },
         { name: 'Shield', icon: '🛡' },
