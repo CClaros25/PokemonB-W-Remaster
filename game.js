@@ -1,11 +1,10 @@
-// Main Game Configuration
 const mainConfig = {
     type: Phaser.AUTO,
-    parent: 'main-game', // Parent div for the main game
-    width: 1024,
+    parent: 'main-game', // Attach to left div
+    width: 768,          // Keep this your main game width
     height: 768,
     pixelArt: true,
-    backgroundColor: '#7CFC00', // Grass green
+    backgroundColor: '#7CFC00',
     scene: {
         preload,
         create,
@@ -13,11 +12,10 @@ const mainConfig = {
     }
 };
 
-// Side Panel Configuration
 const sideConfig = {
     type: Phaser.AUTO,
-    parent: 'side-panel',
-    width: 300,
+    parent: 'side-panel', // Attach to right div
+    width: 256,           // Smaller side panel
     height: 768,
     pixelArt: true,
     backgroundColor: '#333333',
