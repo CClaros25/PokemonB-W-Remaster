@@ -16,7 +16,7 @@ const sideConfig = {
     type: Phaser.AUTO,
     parent: 'side-panel', // Attach to right div
     width: 256,           // Smaller side panel
-    height: 768,
+    height: 284,
     pixelArt: true,
     backgroundColor: '#333333',
     scene: {
