@@ -5,18 +5,41 @@
   <title>Phaser Sprite Movement</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <style>
-    body { margin: 0; background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    canvas { border: 1px solid white; image-rendering: pixelated; }
-    #game-container {
-            /* Main game attaches here */
-        }
-        #side-panel {
-            margin-left: 10px;
-            border-left: 2px solid #555;
-        }
+    body {
+      margin: 0;
+      background: #222;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #container {
+      display: flex;
+      flex-direction: row;
+    }
+
+    #main-game, #side-panel {
+      display: inline-block;
+    }
+
+    #side-panel {
+      margin-left: 10px;
+      border-left: 2px solid #555;
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      display: block;
+    }
   </style>
 </head>
 <body>
+  <div id="container">
+    <div id="main-game"></div>
+    <div id="side-panel"></div>
+  </div>
+
   <script src="game.js"></script>
 </body>
 </html>
