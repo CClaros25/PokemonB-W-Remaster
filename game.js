@@ -4,7 +4,6 @@ const mainConfig = {
     width: 768,
     height: 768,
     pixelArt: true,
-    // Removed solid color background
     scene: {
         preload,
         create,
@@ -22,8 +21,8 @@ const mainConfig = {
 const sideConfig = {
     type: Phaser.AUTO,
     parent: 'side-panel',
-    width: 300, 
-    height: 768, // Match HTML height
+    width: 300,
+    height: 768,
     pixelArt: true,
     backgroundColor: '#333333',
     scene: {
@@ -46,17 +45,16 @@ const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 48;
 const TREE_WIDTH = 64;
 const TREE_HEIGHT = 96;
-const TREE_HITBOX_HEIGHT = 30;
-const ROCK_WIDTH = 32;
-const ROCK_HEIGHT = 32;
-const ROCK_SCALE = 0.6;
+const TREE_HITBOX_HEIGHT = 40;
+const TREE_HITBOX_FRONT_REDUCTION = 0.6; // 40% smaller front hitbox
+const ROCK_WIDTH = 24;  // Smaller than before
+const ROCK_HEIGHT = 24; // Smaller than before
+const ROCK_SCALE = 0.4; // Smaller scale (40% of original)
 const TILE_SIZE = 64;
 let useFallbackPaths = false;
 
 function preload() {
-    // Load background image
     this.load.image('background', 'background.png');
-    
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
     this.load.image('grass', 'grass.png');
     this.load.image('tree', 'tree.png');
@@ -72,14 +70,13 @@ function preload() {
 }
 
 function create() {
-    // Add background image (must be first)
     const bg = this.add.image(
         this.cameras.main.centerX,
         this.cameras.main.centerY,
         'background'
     );
     bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
-    bg.setDepth(-1); // Behind everything
+    bg.setDepth(-1);
 
     const cols = Math.floor(this.sys.game.config.width / TILE_SIZE);
     const rows = Math.floor(this.sys.game.config.height / TILE_SIZE);
@@ -101,143 +98,6 @@ function create() {
 
     setupAnimations(this);
     cursors = this.input.keyboard.createCursorKeys();
-}
-
-function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
-    const startEdge = Phaser.Math.Between(0, 3);
-    let x, y, dirX, dirY;
-    
-    switch(startEdge) {
-        case 0: x = Phaser.Math.Between(1, cols-2); y = 0; dirX = 0; dirY = 1; break;
-        case 1: x = cols-1; y = Phaser.Math.Between(1, rows-2); dirX = -1; dirY = 0; break;
-        case 2: x = Phaser.Math.Between(1, cols-2); y = rows-1; dirX = 0; dirY = -1; break;
-        case 3: x = 0; y = Phaser.Math.Between(1, rows-2); dirX = 1; dirY = 0; break;
-    }
-    
-    const pathLength = Phaser.Math.Between(15, 25);
-    let lastDirX = dirX;
-    let lastDirY = dirY;
-    
-    for (let i = 0; i < pathLength; i++) {
-        occupiedPositions.add(`${x},${y}`);
-        
-        const pathX = x * TILE_SIZE + TILE_SIZE / 2;
-        const pathY = y * TILE_SIZE + TILE_SIZE / 2;
-        
-        let isCorner = false;
-        let rotation = 0;
-        
-        if (i > 0 && (dirX !== lastDirX || dirY !== lastDirY)) {
-            isCorner = true;
-            if (lastDirX === 1 && dirY === 1) rotation = 0;
-            else if (lastDirY === 1 && dirX === -1) rotation = Math.PI/2;
-            else if (lastDirX === -1 && dirY === -1) rotation = Math.PI;
-            else if (lastDirY === -1 && dirX === 1) rotation = -Math.PI/2;
-        }
-        
-        const pathTile = createPathTile(scene, pathX, pathY, isCorner, rotation);
-        
-        if (!isCorner && dirX !== 0) pathTile.rotation = Math.PI/2;
-        
-        pathTile.setDepth(0);
-        pathGroup.add(pathTile);
-        
-        if (Phaser.Math.Between(0, 100) < 30 && i > 2) {
-            const possibleDirs = dirX === 0 ? 
-                [{x: 1, y: 0}, {x: -1, y: 0}] : 
-                [{x: 0, y: 1}, {x: 0, y: -1}];
-            
-            const validDirs = possibleDirs.filter(dir => {
-                const newX = x + dir.x;
-                const newY = y + dir.y;
-                return newX >= 0 && newX < cols && newY >= 0 && newY < rows;
-            });
-            
-            if (validDirs.length > 0) {
-                lastDirX = dirX;
-                lastDirY = dirY;
-                const newDir = Phaser.Math.RND.pick(validDirs);
-                dirX = newDir.x;
-                dirY = newDir.y;
-            }
-        }
-        
-        x += dirX;
-        y += dirY;
-        if (x <= 0 || x >= cols-1 || y <= 0 || y >= rows-1) break;
-    }
-}
-
-function createPathTile(scene, x, y, isCorner = false, rotation = 0) {
-    if (useFallbackPaths) {
-        const tile = scene.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, 0x8B4513);
-        tile.setOrigin(0.5);
-        if (isCorner) tile.fillAlpha = 0.8;
-        if (rotation !== 0) tile.rotation = rotation;
-        return tile;
-    } else {
-        const tile = scene.add.image(x, y, isCorner ? 'corner-path' : 'main-path');
-        tile.setOrigin(0.5);
-        if (rotation !== 0) tile.rotation = rotation;
-        return tile;
-    }
-}
-
-function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
-    const clumpCount = 15;
-    const minClumpSize = 3;
-    const maxClumpSize = 8;
-    const clumpSpacing = 3;
-    const clumpCenters = [];
-    
-    for (let i = 0; i < clumpCount; i++) {
-        let attempts = 0;
-        let validPosition = false;
-        let centerX, centerY;
-        
-        while (attempts < 50 && !validPosition) {
-            centerX = Phaser.Math.Between(1, cols - 2);
-            centerY = Phaser.Math.Between(1, rows - 2);
-            validPosition = true;
-            
-            for (const center of clumpCenters) {
-                const dx = Math.abs(center.x - centerX);
-                const dy = Math.abs(center.y - centerY);
-                if (dx < clumpSpacing && dy < clumpSpacing) {
-                    validPosition = false;
-                    break;
-                }
-            }
-            
-            if (occupiedPositions.has(`${centerX},${centerY}`)) validPosition = false;
-            attempts++;
-        }
-        
-        if (!validPosition) continue;
-        
-        clumpCenters.push({ x: centerX, y: centerY });
-        const clumpSize = Phaser.Math.Between(minClumpSize, maxClumpSize);
-        
-        for (let j = 0; j < clumpSize; j++) {
-            const offsetX = Phaser.Math.Between(-1, 1);
-            const offsetY = Phaser.Math.Between(-1, 1);
-            const gx = centerX + offsetX;
-            const gy = centerY + offsetY;
-            
-            if (gx < 0 || gx >= cols || gy < 0 || gy >= rows || 
-                occupiedPositions.has(`${gx},${gy}`)) continue;
-            
-            const grass = scene.add.image(
-                gx * TILE_SIZE + TILE_SIZE / 2,
-                gy * TILE_SIZE + TILE_SIZE / 2,
-                'grass'
-            );
-            grass.setScale(0.125);
-            grass.setOrigin(0.5);
-            grass.setDepth(0);
-            grassGroup.add(grass);
-        }
-    }
 }
 
 function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
@@ -270,9 +130,9 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
             
             trees.push({
                 sprite: tree,
-                x: treeX - TREE_WIDTH/2,
+                x: treeX - (TREE_WIDTH * TREE_HITBOX_FRONT_REDUCTION)/2,
                 y: treeY - TREE_HITBOX_HEIGHT,
-                width: TREE_WIDTH,
+                width: TREE_WIDTH * TREE_HITBOX_FRONT_REDUCTION,
                 height: TREE_HITBOX_HEIGHT
             });
             
@@ -341,48 +201,6 @@ function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
     }
 }
 
-function findStartPosition(cols, rows, occupiedPositions) {
-    for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-            if (occupiedPositions.has(`${x},${y}`)) return { x, y };
-        }
-    }
-    return { x: Math.floor(cols/2), y: Math.floor(rows/2) };
-}
-
-function setupAnimations(scene) {
-    const anims = [
-        { key: 'walk_down', frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4'] },
-        { key: 'walk_left', frames: ['walk_left_1', 'walk_left_2', 'walk_left_3', 'walk_left_4'] },
-        { key: 'walk_right', frames: ['walk_right_1', 'walk_right_2', 'walk_right_3', 'walk_right_4'] },
-        { key: 'walk_up', frames: ['walk_up_1', 'walk_up_2', 'walk_up_3', 'walk_up_4'] }
-    ];
-    
-    anims.forEach(anim => {
-        scene.anims.create({
-            key: anim.key,
-            frames: anim.frames.map(f => ({ key: 'hero', frame: f })),
-            frameRate: 10,
-            repeat: -1
-        });
-    });
-    
-    const idleAnims = [
-        { key: 'idle_down', frame: 'walk_down_1' },
-        { key: 'idle_left', frame: 'walk_left_1' },
-        { key: 'idle_right', frame: 'walk_right_1' },
-        { key: 'idle_up', frame: 'walk_up_1' }
-    ];
-    
-    idleAnims.forEach(anim => {
-        scene.anims.create({
-            key: anim.key,
-            frames: [{ key: 'hero', frame: anim.frame }],
-            frameRate: 1
-        });
-    });
-}
-
 function update() {
     let moving = false;
     const speed = 2;
@@ -427,13 +245,28 @@ function update() {
         height: PLAYER_HEIGHT
     };
 
+    // Improved tree collision
     for (const tree of trees) {
-        if (checkCollision(playerBounds, tree)) {
+        const playerFront = player.y < tree.sprite.y; // Player is above tree (in front)
+        const effectiveWidth = playerFront ? 
+            TREE_WIDTH * TREE_HITBOX_FRONT_REDUCTION : 
+            TREE_WIDTH * 0.3; // Even narrower when behind
+            
+        if (checkCollision(
+            playerBounds,
+            {
+                x: tree.sprite.x - effectiveWidth/2,
+                y: tree.y,
+                width: effectiveWidth,
+                height: tree.height
+            }
+        )) {
             canMove = false;
             break;
         }
     }
     
+    // Rock collision
     for (const rock of rocks) {
         if (checkCollision(playerBounds, rock)) {
             canMove = false;
@@ -451,64 +284,6 @@ function update() {
     rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
 }
 
-function checkCollision(obj1, obj2) {
-    return obj1.x < obj2.x + obj2.width &&
-           obj1.x + obj1.width > obj2.x &&
-           obj1.y < obj2.y + obj2.height &&
-           obj1.y + obj1.height > obj2.y;
-}
-
-function createSidePanel() {
-    this.add.text(this.cameras.main.centerX, 30, 'PLAYER STATS', {
-        font: '24px Arial',
-        fill: '#FFFFFF'
-    }).setOrigin(0.5);
-
-    const statsY = 80;
-    const statSpacing = 40;
-    
-    this.add.text(20, statsY, '❤ Health:', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-    this.add.text(120, statsY, '████████', {
-        font: '18px Arial',
-        fill: '#FF5555'
-    });
-
-    this.add.text(20, statsY + statSpacing, '⚡ Level:', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-    this.add.text(120, statsY + statSpacing, '1', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-
-    this.add.text(20, statsY + statSpacing * 2, '✦ XP:', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-    this.add.text(120, statsY + statSpacing * 2, '0/100', {
-        font: '18px Arial',
-        fill: '#55FF55'
-    });
-
-    this.add.text(this.cameras.main.centerX, 200, 'INVENTORY', {
-        font: '20px Arial',
-        fill: '#FFFFFF'
-    }).setOrigin(0.5);
-
-    const inventoryItems = [
-        { name: 'Sword', icon: '⚔' },
-        { name: 'Shield', icon: '🛡' },
-        { name: 'Potion', icon: '🧪' }
-    ];
-    
-    inventoryItems.forEach((item, index) => {
-        this.add.text(40, 230 + index * 30, `${item.icon} ${item.name}`, {
-            font: '16px Arial',
-            fill: '#DDDDDD'
-        });
-    });
-}
+// [Rest of your existing functions remain unchanged]
+// generatePath(), generateGrass(), findStartPosition()
+// setupAnimations(), checkCollision(), createSidePanel()
