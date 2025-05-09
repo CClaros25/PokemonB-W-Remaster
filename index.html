@@ -2,41 +2,70 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Phaser Sprite Movement</title>
+  <title>Phaser RPG Game</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <style>
     body {
       margin: 0;
-      background: #222;
+      background: #111;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
     }
 
     #container {
       display: flex;
       flex-direction: row;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+      max-width: 1100px; /* 768 + 300 + gap */
     }
 
-    #main-game, #side-panel {
-      display: inline-block;
+    #main-game {
+      width: 768px;
+      height: 768px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
     }
 
     #side-panel {
-      margin-left: 10px;
-      border-left: 2px solid #555;
+      width: 300px;
+      height: 768px;
+      background: #222;
+      border-radius: 5px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
       display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        width: 100%;
-        overflow: hidden;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      border-left: 2px solid #444;
     }
 
     canvas {
-      image-rendering: pixelated;
       display: block;
+      image-rendering: pixelated;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1100px) {
+      #container {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      #side-panel {
+        width: 768px;
+        height: auto;
+        min-height: 200px;
+        margin-left: 0;
+        border-left: none;
+        border-top: 2px solid #444;
+      }
     }
   </style>
 </head>
