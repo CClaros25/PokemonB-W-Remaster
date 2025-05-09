@@ -9,13 +9,21 @@ const mainConfig = {
         preload,
         create,
         update
+    },
+    // Add these to center the main game canvas
+    dom: {
+        createContainer: true
+    },
+    scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
     }
 };
 
 const sideConfig = {
     type: Phaser.AUTO,
     parent: 'side-panel',
-    width: 400,
+    width: 300,  // Your wider side panel
     height: 284,
     pixelArt: true,
     backgroundColor: '#333333',
@@ -34,20 +42,33 @@ const sideConfig = {
 const mainGame = new Phaser.Game(mainConfig);
 const sideGame = new Phaser.Game(sideConfig);
 
-let player, cursors, trees = [];
+let player, cursors, trees = [], rocks = [];
 const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 48;
 const TREE_WIDTH = 64;
 const TREE_HEIGHT = 96;
 const TREE_HITBOX_HEIGHT = 30;
+const ROCK_WIDTH = 48;
+const ROCK_HEIGHT = 48;
 const TILE_SIZE = 64;
+let useFallbackPaths = false;
 
 function preload() {
     this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml');
     this.load.image('grass', 'grass.png');
     this.load.image('tree', 'tree.png');
-    this.load.image('main-path', 'main-path.png');
-    this.load.image('corner-path', 'corner-path.png');
+    this.load.image('rock1', 'rock1.png');
+    this.load.image('rock2', 'rock2.png');
+    
+    // Try to load path images
+    this.load.image('main-path', 'main-path.png').on('loaderror', () => {
+        useFallbackPaths = true;
+        console.log('Main path image not found, using fallback');
+    });
+    this.load.image('corner-path', 'corner-path.png').on('loaderror', () => {
+        useFallbackPaths = true;
+        console.log('Corner path image not found, using fallback');
+    });
 }
 
 function create() {
@@ -56,6 +77,7 @@ function create() {
     const grassGroup = this.add.group();
     const pathGroup = this.add.group();
     const treeGroup = this.add.group();
+    const rockGroup = this.add.group();
 
     // Track all occupied positions
     const occupiedPositions = new Set();
@@ -63,11 +85,14 @@ function create() {
     // Generate a winding path first
     generatePath(this, cols, rows, pathGroup, occupiedPositions);
     
-    // Generate clumpy grass around the path (with proper spacing)
+    // Generate clumpy grass around the path
     generateGrass(this, cols, rows, grassGroup, occupiedPositions);
     
     // Generate trees with proper spacing
     generateTrees(this, cols, rows, treeGroup, occupiedPositions);
+    
+    // Generate 1-2 rocks
+    generateRocks(this, cols, rows, rockGroup, occupiedPositions);
 
     // Player setup - place on path
     const startPos = findStartPosition(cols, rows, occupiedPositions);
@@ -80,87 +105,65 @@ function create() {
     cursors = this.input.keyboard.createCursorKeys();
 }
 
+function createPathTile(scene, x, y, isCorner = false, rotation = 0) {
+    if (useFallbackPaths) {
+        const tile = scene.add.rectangle(x, y, TILE_SIZE, TILE_SIZE, 0x8B4513);
+        tile.setOrigin(0.5);
+        if (isCorner) tile.fillAlpha = 0.8;
+        if (rotation !== 0) tile.rotation = rotation;
+        return tile;
+    } else {
+        const tile = scene.add.image(x, y, isCorner ? 'corner-path' : 'main-path');
+        tile.setOrigin(0.5);
+        if (rotation !== 0) tile.rotation = rotation;
+        return tile;
+    }
+}
+
 function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
-    // Start path at a random edge
     const startEdge = Phaser.Math.Between(0, 3);
     let x, y, dirX, dirY;
     
-    // Determine starting position and direction
     switch(startEdge) {
-        case 0: // Top
-            x = Phaser.Math.Between(1, cols-2);
-            y = 0;
-            dirX = 0;
-            dirY = 1;
-            break;
-        case 1: // Right
-            x = cols-1;
-            y = Phaser.Math.Between(1, rows-2);
-            dirX = -1;
-            dirY = 0;
-            break;
-        case 2: // Bottom
-            x = Phaser.Math.Between(1, cols-2);
-            y = rows-1;
-            dirX = 0;
-            dirY = -1;
-            break;
-        case 3: // Left
-            x = 0;
-            y = Phaser.Math.Between(1, rows-2);
-            dirX = 1;
-            dirY = 0;
-            break;
+        case 0: x = Phaser.Math.Between(1, cols-2); y = 0; dirX = 0; dirY = 1; break;
+        case 1: x = cols-1; y = Phaser.Math.Between(1, rows-2); dirX = -1; dirY = 0; break;
+        case 2: x = Phaser.Math.Between(1, cols-2); y = rows-1; dirX = 0; dirY = -1; break;
+        case 3: x = 0; y = Phaser.Math.Between(1, rows-2); dirX = 1; dirY = 0; break;
     }
     
-    // Generate winding path
     const pathLength = Phaser.Math.Between(15, 25);
     let lastDirX = dirX;
     let lastDirY = dirY;
     
     for (let i = 0; i < pathLength; i++) {
-        // Mark current position as occupied
         occupiedPositions.add(`${x},${y}`);
         
-        // Place path tile
         const pathX = x * TILE_SIZE + TILE_SIZE / 2;
         const pathY = y * TILE_SIZE + TILE_SIZE / 2;
         
-        // Determine if this is a straight path or corner
-        let pathTile;
+        let isCorner = false;
+        let rotation = 0;
+        
         if (i > 0 && (dirX !== lastDirX || dirY !== lastDirY)) {
-            // Corner tile
-            pathTile = scene.add.image(pathX, pathY, 'corner-path');
-            // Calculate rotation based on direction change
-            let rotation = 0;
-            if (lastDirX === 1 && dirY === 1) rotation = 0; // Right to Down
-            else if (lastDirY === 1 && dirX === -1) rotation = Math.PI/2; // Down to Left
-            else if (lastDirX === -1 && dirY === -1) rotation = Math.PI; // Left to Up
-            else if (lastDirY === -1 && dirX === 1) rotation = -Math.PI/2; // Up to Right
-            pathTile.setRotation(rotation);
-        } else {
-            // Straight path
-            pathTile = scene.add.image(pathX, pathY, 'main-path');
-            if (dirX !== 0) pathTile.setRotation(Math.PI/2); // Horizontal path
+            isCorner = true;
+            if (lastDirX === 1 && dirY === 1) rotation = 0;
+            else if (lastDirY === 1 && dirX === -1) rotation = Math.PI/2;
+            else if (lastDirX === -1 && dirY === -1) rotation = Math.PI;
+            else if (lastDirY === -1 && dirX === 1) rotation = -Math.PI/2;
         }
-        pathTile.setOrigin(0.5);
+        
+        const pathTile = createPathTile(scene, pathX, pathY, isCorner, rotation);
+        
+        if (!isCorner && dirX !== 0) pathTile.rotation = Math.PI/2;
+        
         pathTile.setDepth(0);
         pathGroup.add(pathTile);
         
-        // Random chance to change direction (but not back on itself)
         if (Phaser.Math.Between(0, 100) < 30 && i > 2) {
-            const possibleDirs = [];
-            if (dirX === 0) {
-                // Currently moving vertically, can turn left or right
-                possibleDirs.push({x: 1, y: 0});
-                possibleDirs.push({x: -1, y: 0});
-            } else {
-                // Currently moving horizontally, can turn up or down
-                possibleDirs.push({x: 0, y: 1});
-                possibleDirs.push({x: 0, y: -1});
-            }
+            const possibleDirs = dirX === 0 ? 
+                [{x: 1, y: 0}, {x: -1, y: 0}] : 
+                [{x: 0, y: 1}, {x: 0, y: -1}];
             
-            // Filter out directions that would go out of bounds
             const validDirs = possibleDirs.filter(dir => {
                 const newX = x + dir.x;
                 const newY = y + dir.y;
@@ -176,11 +179,8 @@ function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
             }
         }
         
-        // Move to next position
         x += dirX;
         y += dirY;
-        
-        // Stop if we hit the edge
         if (x <= 0 || x >= cols-1 || y <= 0 || y >= rows-1) break;
     }
 }
@@ -190,7 +190,6 @@ function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
     const minClumpSize = 3;
     const maxClumpSize = 8;
     const clumpSpacing = 3;
-    
     const clumpCenters = [];
     
     for (let i = 0; i < clumpCount; i++) {
@@ -212,10 +211,7 @@ function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
                 }
             }
             
-            if (occupiedPositions.has(`${centerX},${centerY}`)) {
-                validPosition = false;
-            }
-            
+            if (occupiedPositions.has(`${centerX},${centerY}`)) validPosition = false;
             attempts++;
         }
         
@@ -233,10 +229,11 @@ function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
             if (gx < 0 || gx >= cols || gy < 0 || gy >= rows || 
                 occupiedPositions.has(`${gx},${gy}`)) continue;
             
-            const x = gx * TILE_SIZE + TILE_SIZE / 2;
-            const y = gy * TILE_SIZE + TILE_SIZE / 2;
-            
-            const grass = scene.add.image(x, y, 'grass');
+            const grass = scene.add.image(
+                gx * TILE_SIZE + TILE_SIZE / 2,
+                gy * TILE_SIZE + TILE_SIZE / 2,
+                'grass'
+            );
             grass.setScale(0.125);
             grass.setOrigin(0.5);
             grass.setDepth(0);
@@ -255,9 +252,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
         let canPlaceTree = true;
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
-                const checkX = patchX + dx;
-                const checkY = patchY + dy;
-                if (occupiedPositions.has(`${checkX},${checkY}`)) {
+                if (occupiedPositions.has(`${patchX + dx},${patchY + dy}`)) {
                     canPlaceTree = false;
                     break;
                 }
@@ -292,72 +287,100 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
     }
 }
 
+function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
+    const rockCount = Phaser.Math.Between(1, 2); // 1-2 rocks
+    
+    for (let i = 0; i < rockCount; i++) {
+        let attempts = 0;
+        let validPosition = false;
+        let rockX, rockY;
+        
+        while (attempts < 50 && !validPosition) {
+            rockX = Phaser.Math.Between(1, cols - 2);
+            rockY = Phaser.Math.Between(1, rows - 2);
+            validPosition = true;
+            
+            // Check 2 tile radius around rock
+            for (let dx = -2; dx <= 2; dx++) {
+                for (let dy = -2; dy <= 2; dy++) {
+                    if (occupiedPositions.has(`${rockX + dx},${rockY + dy}`)) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                if (!validPosition) break;
+            }
+            attempts++;
+        }
+        
+        if (!validPosition) continue;
+        
+        const rockType = Phaser.Math.Between(1, 2); // Randomly choose rock1 or rock2
+        const x = rockX * TILE_SIZE + TILE_SIZE / 2;
+        const y = rockY * TILE_SIZE + TILE_SIZE / 2;
+        
+        const rock = scene.add.image(x, y, `rock${rockType}`);
+        rock.setScale(0.75);
+        rock.setOrigin(0.5);
+        rock.setDepth(y);
+        rockGroup.add(rock);
+        
+        rocks.push({
+            sprite: rock,
+            x: x - ROCK_WIDTH/2,
+            y: y - ROCK_HEIGHT/2,
+            width: ROCK_WIDTH,
+            height: ROCK_HEIGHT
+        });
+        
+        // Mark surrounding tiles as occupied
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                occupiedPositions.add(`${rockX + dx},${rockY + dy}`);
+            }
+        }
+    }
+}
+
 function findStartPosition(cols, rows, occupiedPositions) {
     for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
-            if (occupiedPositions.has(`${x},${y}`)) {
-                return { x, y };
-            }
+            if (occupiedPositions.has(`${x},${y}`)) return { x, y };
         }
     }
     return { x: Math.floor(cols/2), y: Math.floor(rows/2) };
 }
 
 function setupAnimations(scene) {
-    scene.anims.create({
-        key: 'walk_down',
-        frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4']
-            .map(f => ({ key: 'hero', frame: f })),
-        frameRate: 10,
-        repeat: -1
+    const anims = [
+        { key: 'walk_down', frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4'] },
+        { key: 'walk_left', frames: ['walk_left_1', 'walk_left_2', 'walk_left_3', 'walk_left_4'] },
+        { key: 'walk_right', frames: ['walk_right_1', 'walk_right_2', 'walk_right_3', 'walk_right_4'] },
+        { key: 'walk_up', frames: ['walk_up_1', 'walk_up_2', 'walk_up_3', 'walk_up_4'] }
+    ];
+    
+    anims.forEach(anim => {
+        scene.anims.create({
+            key: anim.key,
+            frames: anim.frames.map(f => ({ key: 'hero', frame: f })),
+            frameRate: 10,
+            repeat: -1
+        });
     });
-
-    scene.anims.create({
-        key: 'walk_left',
-        frames: ['walk_left_1', 'walk_left_2', 'walk_left_3', 'walk_left_4']
-            .map(f => ({ key: 'hero', frame: f })),
-        frameRate: 10,
-        repeat: -1
-    });
-
-    scene.anims.create({
-        key: 'walk_right',
-        frames: ['walk_right_1', 'walk_right_2', 'walk_right_3', 'walk_right_4']
-            .map(f => ({ key: 'hero', frame: f })),
-        frameRate: 10,
-        repeat: -1
-    });
-
-    scene.anims.create({
-        key: 'walk_up',
-        frames: ['walk_up_1', 'walk_up_2', 'walk_up_3', 'walk_up_4']
-            .map(f => ({ key: 'hero', frame: f })),
-        frameRate: 10,
-        repeat: -1
-    });
-
-    scene.anims.create({
-        key: 'idle_down',
-        frames: [{ key: 'hero', frame: 'walk_down_1' }],
-        frameRate: 1
-    });
-
-    scene.anims.create({
-        key: 'idle_left',
-        frames: [{ key: 'hero', frame: 'walk_left_1' }],
-        frameRate: 1
-    });
-
-    scene.anims.create({
-        key: 'idle_right',
-        frames: [{ key: 'hero', frame: 'walk_right_1' }],
-        frameRate: 1
-    });
-
-    scene.anims.create({
-        key: 'idle_up',
-        frames: [{ key: 'hero', frame: 'walk_up_1' }],
-        frameRate: 1
+    
+    const idleAnims = [
+        { key: 'idle_down', frame: 'walk_down_1' },
+        { key: 'idle_left', frame: 'walk_left_1' },
+        { key: 'idle_right', frame: 'walk_right_1' },
+        { key: 'idle_up', frame: 'walk_up_1' }
+    ];
+    
+    idleAnims.forEach(anim => {
+        scene.anims.create({
+            key: anim.key,
+            frames: [{ key: 'hero', frame: anim.frame }],
+            frameRate: 1
+        });
     });
 }
 
@@ -405,10 +428,21 @@ function update() {
         height: PLAYER_HEIGHT
     };
 
+    // Check tree collisions
     for (const tree of trees) {
         if (checkCollision(playerBounds, tree)) {
             canMove = false;
             break;
+        }
+    }
+    
+    // Check rock collisions
+    if (canMove) {
+        for (const rock of rocks) {
+            if (checkCollision(playerBounds, rock)) {
+                canMove = false;
+                break;
+            }
         }
     }
 
@@ -418,9 +452,8 @@ function update() {
     }
 
     player.setDepth(player.y + 20);
-    trees.forEach(tree => {
-        tree.sprite.setDepth(tree.sprite.y);
-    });
+    trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
+    rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
 }
 
 function checkCollision(obj1, obj2) {
