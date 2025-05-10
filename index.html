@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Phaser RPG Game</title>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -19,7 +19,7 @@
     #container {
       display: flex;
       flex-direction: row;
-      align-items: center; /* Changed from flex-start to center */
+      align-items: center;
       gap: 20px;
       padding: 20px;
       box-sizing: border-box;
@@ -30,12 +30,12 @@
       width: 768px;
       height: 768px;
       box-shadow: 0 0 20px rgba(0,0,0,0.7);
-      background: #7CFC00; /* Fallback if canvas fails */
+      background: #7CFC00;
     }
 
     #side-panel {
       width: 300px;
-      height: 768px; /* Match main game height */
+      height: 768px;
       background: #222;
       border-radius: 5px;
       box-shadow: 0 0 20px rgba(0,0,0,0.7);
@@ -49,11 +49,8 @@
     canvas {
       display: block;
       image-rendering: pixelated;
-      width: 100%;
-      height: 100%;
     }
 
-    /* Responsive adjustments */
     @media (max-width: 1100px) {
       #container {
         flex-direction: column;
@@ -74,18 +71,17 @@
     <div id="side-panel"></div>
   </div>
 
-  <script src="game.js"></script>
-  
-  <!-- Add this temporary debug script -->
   <script>
-    window.addEventListener('load', function() {
-      console.log('DOM fully loaded');
-      if (!document.querySelector('canvas')) {
-        console.error('No canvas elements found!');
-      } else {
-        console.log('Canvas elements detected:', document.querySelectorAll('canvas').length);
+    // Simple check to ensure containers exist
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!document.getElementById('main-game') || !document.getElementById('side-panel')) {
+        console.error('Game containers not found!');
+        return;
       }
+      console.log('Game containers ready');
     });
   </script>
+  
+  <script src="game.js"></script>
 </body>
 </html>
