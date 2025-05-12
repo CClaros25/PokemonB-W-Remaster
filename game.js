@@ -6,7 +6,7 @@ const TREE_HEIGHT = 96;
 const TREE_HITBOX_HEIGHT = 30;
 const ROCK_WIDTH = 32;
 const ROCK_HEIGHT = 32;
-const ROCK_SCALE = 0.4; // Reduced from 0.6 to make rocks smaller
+const ROCK_SCALE = 0.6;
 const TILE_SIZE = 64;
 
 // ===== GAME STATE =====
@@ -47,58 +47,29 @@ function createPathTile(scene, x, y, isCorner = false, rotation = 0) {
 }
 
 function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
-    // Generate first path from one edge
-    const path1 = generateSinglePath(scene, cols, rows, pathGroup, occupiedPositions);
-    
-    // Generate second path from a different edge
-    const path2 = generateSinglePath(scene, cols, rows, pathGroup, occupiedPositions, path1.end);
-    
-    // Try to connect the two paths if they're close
-    if (path1 && path2) {
-        const dist = Phaser.Math.Distance.BetweenPoints(path1.end, path2.end);
-        if (dist < 5 * TILE_SIZE) {
-            connectPaths(scene, path1.end, path2.end, pathGroup, occupiedPositions);
-        }
-    }
-}
-
-function generateSinglePath(scene, cols, rows, pathGroup, occupiedPositions, avoidPoint = null) {
-    // Choose a random edge (0: top, 1: right, 2: bottom, 3: left)
-    let startEdge = Phaser.Math.Between(0, 3);
-    
-    // If we're avoiding a point (for second path), choose a different edge
-    if (avoidPoint) {
-        const avoidEdge = 
-            avoidPoint.y === 0 ? 0 : 
-            avoidPoint.x === cols-1 ? 1 : 
-            avoidPoint.y === rows-1 ? 2 : 3;
-            
-        startEdge = (avoidEdge + 1 + Phaser.Math.Between(0, 2)) % 4;
-    }
-    
+    const startEdge = Phaser.Math.Between(0, 3);
     let x, y, dirX, dirY;
-    
+
     switch(startEdge) {
         case 0: x = Phaser.Math.Between(1, cols-2); y = 0; dirX = 0; dirY = 1; break;
         case 1: x = cols-1; y = Phaser.Math.Between(1, rows-2); dirX = -1; dirY = 0; break;
         case 2: x = Phaser.Math.Between(1, cols-2); y = rows-1; dirX = 0; dirY = -1; break;
         case 3: x = 0; y = Phaser.Math.Between(1, rows-2); dirX = 1; dirY = 0; break;
     }
-    
+
     const pathLength = Phaser.Math.Between(15, 25);
     let lastDirX = dirX;
     let lastDirY = dirY;
-    let endPoint = null;
-    
+
     for (let i = 0; i < pathLength; i++) {
         occupiedPositions.add(`${x},${y}`);
-        
+
         const pathX = x * TILE_SIZE + TILE_SIZE / 2;
         const pathY = y * TILE_SIZE + TILE_SIZE / 2;
-        
+
         let isCorner = false;
         let rotation = 0;
-        
+
         if (i > 0 && (dirX !== lastDirX || dirY !== lastDirY)) {
             isCorner = true;
             if (lastDirX === 1 && dirY === 1) rotation = 0;
@@ -106,29 +77,25 @@ function generateSinglePath(scene, cols, rows, pathGroup, occupiedPositions, avo
             else if (lastDirX === -1 && dirY === -1) rotation = Math.PI;
             else if (lastDirY === -1 && dirX === 1) rotation = -Math.PI/2;
         }
-        
+
         const pathTile = createPathTile(scene, pathX, pathY, isCorner, rotation);
-        
+
         if (!isCorner && dirX !== 0) pathTile.rotation = Math.PI/2;
-        
+
         pathTile.setDepth(0);
         pathGroup.add(pathTile);
-        
-        // Store the end point
-        endPoint = { x, y, pathX, pathY };
-        
-        // Random chance to change direction
+
         if (Phaser.Math.Between(0, 100) < 30 && i > 2) {
             const possibleDirs = dirX === 0 ? 
                 [{x: 1, y: 0}, {x: -1, y: 0}] : 
                 [{x: 0, y: 1}, {x: 0, y: -1}];
-            
+
             const validDirs = possibleDirs.filter(dir => {
                 const newX = x + dir.x;
                 const newY = y + dir.y;
                 return newX >= 0 && newX < cols && newY >= 0 && newY < rows;
             });
-            
+
             if (validDirs.length > 0) {
                 lastDirX = dirX;
                 lastDirY = dirY;
@@ -137,47 +104,10 @@ function generateSinglePath(scene, cols, rows, pathGroup, occupiedPositions, avo
                 dirY = newDir.y;
             }
         }
-        
+
         x += dirX;
         y += dirY;
         if (x <= 0 || x >= cols-1 || y <= 0 || y >= rows-1) break;
-    }
-    
-    return { end: endPoint };
-}
-
-function connectPaths(scene, point1, point2, pathGroup, occupiedPositions) {
-    let x = point1.x;
-    let y = point1.y;
-    
-    const dx = point2.x > point1.x ? 1 : point2.x < point1.x ? -1 : 0;
-    const dy = point2.y > point1.y ? 1 : point2.y < point1.y ? -1 : 0;
-    
-    // First move horizontally if needed
-    while (x !== point2.x) {
-        x += dx;
-        occupiedPositions.add(`${x},${y}`);
-        
-        const pathX = x * TILE_SIZE + TILE_SIZE / 2;
-        const pathY = y * TILE_SIZE + TILE_SIZE / 2;
-        
-        const pathTile = createPathTile(scene, pathX, pathY);
-        pathTile.rotation = Math.PI/2; // Horizontal path
-        pathTile.setDepth(0);
-        pathGroup.add(pathTile);
-    }
-    
-    // Then move vertically if needed
-    while (y !== point2.y) {
-        y += dy;
-        occupiedPositions.add(`${x},${y}`);
-        
-        const pathX = x * TILE_SIZE + TILE_SIZE / 2;
-        const pathY = y * TILE_SIZE + TILE_SIZE / 2;
-        
-        const pathTile = createPathTile(scene, pathX, pathY);
-        pathTile.setDepth(0);
-        pathGroup.add(pathTile);
     }
 }
 
@@ -188,17 +118,17 @@ function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
     const maxClumpSize = 8;
     const clumpSpacing = 3;
     const clumpCenters = [];
-    
+
     for (let i = 0; i < clumpCount; i++) {
         let attempts = 0;
         let validPosition = false;
         let centerX, centerY;
-        
+
         while (attempts < 50 && !validPosition) {
             centerX = Phaser.Math.Between(1, cols - 2);
             centerY = Phaser.Math.Between(1, rows - 2);
             validPosition = true;
-            
+
             for (const center of clumpCenters) {
                 const dx = Math.abs(center.x - centerX);
                 const dy = Math.abs(center.y - centerY);
@@ -207,25 +137,25 @@ function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
                     break;
                 }
             }
-            
+
             if (occupiedPositions.has(`${centerX},${centerY}`)) validPosition = false;
             attempts++;
         }
-        
+
         if (!validPosition) continue;
-        
+
         clumpCenters.push({ x: centerX, y: centerY });
         const clumpSize = Phaser.Math.Between(minClumpSize, maxClumpSize);
-        
+
         for (let j = 0; j < clumpSize; j++) {
             const offsetX = Phaser.Math.Between(-1, 1);
             const offsetY = Phaser.Math.Between(-1, 1);
             const gx = centerX + offsetX;
             const gy = centerY + offsetY;
-            
+
             if (gx < 0 || gx >= cols || gy < 0 || gy >= rows || 
                 occupiedPositions.has(`${gx},${gy}`)) continue;
-            
+
             const grass = scene.add.image(
                 gx * TILE_SIZE + TILE_SIZE / 2,
                 gy * TILE_SIZE + TILE_SIZE / 2,
@@ -241,11 +171,11 @@ function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
 
 function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
     const patchCount = 20;
-    
+
     for (let i = 0; i < patchCount; i++) {
         const patchX = Phaser.Math.Between(2, cols - 3);
         const patchY = Phaser.Math.Between(2, rows - 3);
-        
+
         let canPlaceTree = true;
         for (let dx = -1; dx <= 1; dx++) {
             for (let dy = -1; dy <= 1; dy++) {
@@ -256,17 +186,17 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
             }
             if (!canPlaceTree) break;
         }
-        
+
         if (canPlaceTree && Math.random() < 0.5) {
             const treeX = patchX * TILE_SIZE + TILE_SIZE / 2;
             const treeY = patchY * TILE_SIZE + TILE_SIZE / 2;
-            
+
             const tree = scene.add.image(treeX, treeY - 20, 'tree');
             tree.setScale(2);
             tree.setOrigin(0.5, 1);
             tree.setDepth(treeY);
             treeGroup.add(tree);
-            
+
             trees.push({
                 sprite: tree,
                 x: treeX - TREE_WIDTH/2,
@@ -274,7 +204,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
                 width: TREE_WIDTH,
                 height: TREE_HITBOX_HEIGHT
             });
-            
+
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dy = -1; dy <= 1; dy++) {
                     occupiedPositions.add(`${patchX + dx},${patchY + dy}`);
@@ -285,26 +215,20 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
 }
 
 function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
-    const rockCount = Phaser.Math.Between(5, 10); // Increased number of rocks since they're smaller
-    
+    const rockCount = Phaser.Math.Between(1, 2);
+
     for (let i = 0; i < rockCount; i++) {
         let attempts = 0;
         let validPosition = false;
         let rockX, rockY;
-        
+
         while (attempts < 50 && !validPosition) {
             rockX = Phaser.Math.Between(1, cols - 2);
             rockY = Phaser.Math.Between(1, rows - 2);
             validPosition = true;
-            
-            // Check if position is already occupied
-            if (occupiedPositions.has(`${rockX},${rockY}`)) {
-                validPosition = false;
-            }
-            
-            // Check surrounding area (smaller since rocks are smaller)
-            for (let dx = -1; dx <= 1; dx++) {
-                for (let dy = -1; dy <= 1; dy++) {
+
+            for (let dx = -2; dx <= 2; dx++) {
+                for (let dy = -2; dy <= 2; dy++) {
                     if (occupiedPositions.has(`${rockX + dx},${rockY + dy}`)) {
                         validPosition = false;
                         break;
@@ -314,22 +238,22 @@ function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
             }
             attempts++;
         }
-        
+
         if (!validPosition) continue;
-        
+
         const rockType = Phaser.Math.Between(1, 2);
         const x = rockX * TILE_SIZE + TILE_SIZE / 2;
         const y = rockY * TILE_SIZE + TILE_SIZE / 2;
-        
+
         const rock = scene.add.image(x, y, `rock${rockType}`);
         rock.setScale(ROCK_SCALE);
         rock.setOrigin(0.5);
         rock.setDepth(y);
         rockGroup.add(rock);
-        
+
         const scaledWidth = ROCK_WIDTH * ROCK_SCALE;
         const scaledHeight = ROCK_HEIGHT * ROCK_SCALE;
-        
+
         rocks.push({
             sprite: rock,
             x: x - scaledWidth/2,
@@ -337,10 +261,300 @@ function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
             width: scaledWidth,
             height: scaledHeight
         });
-        
-        // Mark only the immediate tile as occupied for smaller rocks
-        occupiedPositions.add(`${rockX},${rockY}`);
+
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                occupiedPositions.add(`${rockX + dx},${rockY + dy}`);
+            }
+        }
     }
 }
 
-// ... (rest of the code remains the same)
+// ===== ANIMATIONS =====
+function setupAnimations(scene) {
+    const anims = [
+        { key: 'walk_down', frames: ['walk_down_1', 'walk_down_2', 'walk_down_3', 'walk_down_4'] },
+        { key: 'walk_left', frames: ['walk_left_1', 'walk_left_2', 'walk_left_3', 'walk_left_4'] },
+        { key: 'walk_right', frames: ['walk_right_1', 'walk_right_2', 'walk_right_3', 'walk_right_4'] },
+        { key: 'walk_up', frames: ['walk_up_1', 'walk_up_2', 'walk_up_3', 'walk_up_4'] }
+    ];
+
+    anims.forEach(anim => {
+        scene.anims.create({
+            key: anim.key,
+            frames: anim.frames.map(f => ({ key: 'hero', frame: f })),
+            frameRate: 10,
+            repeat: -1
+        });
+    });
+
+    const idleAnims = [
+        { key: 'idle_down', frame: 'walk_down_1' },
+        { key: 'idle_left', frame: 'walk_left_1' },
+        { key: 'idle_right', frame: 'walk_right_1' },
+        { key: 'idle_up', frame: 'walk_up_1' }
+    ];
+
+    idleAnims.forEach(anim => {
+        scene.anims.create({
+            key: anim.key,
+            frames: [{ key: 'hero', frame: anim.frame }],
+            frameRate: 1
+        });
+    });
+}
+
+// ===== SIDE PANEL =====
+function createSidePanel() {
+    this.add.text(this.cameras.main.centerX, 30, 'PLAYER STATS', {
+        font: '24px Arial',
+        fill: '#FFFFFF'
+    }).setOrigin(0.5);
+
+    const statsY = 80;
+    const statSpacing = 40;
+
+    this.add.text(20, statsY, '❤ Health:', {
+        font: '18px Arial',
+        fill: '#FFFFFF'
+    });
+    this.add.text(120, statsY, '████████', {
+        font: '18px Arial',
+        fill: '#FF5555'
+    });
+
+    this.add.text(20, statsY + statSpacing, '⚡ Level:', {
+        font: '18px Arial',
+        fill: '#FFFFFF'
+    });
+    this.add.text(120, statsY + statSpacing, '1', {
+        font: '18px Arial',
+        fill: '#FFFFFF'
+    });
+
+    this.add.text(20, statsY + statSpacing * 2, '✦ XP:', {
+        font: '18px Arial',
+        fill: '#FFFFFF'
+    });
+    this.add.text(120, statsY + statSpacing * 2, '0/100', {
+        font: '18px Arial',
+        fill: '#55FF55'
+    });
+
+    this.add.text(this.cameras.main.centerX, 200, 'INVENTORY', {
+        font: '20px Arial',
+        fill: '#FFFFFF'
+    }).setOrigin(0.5);
+
+    const inventoryItems = [
+        { name: 'Sword', icon: '⚔' },
+        { name: 'Shield', icon: '🛡' },
+        { name: 'Potion', icon: '🧪' }
+    ];
+
+    inventoryItems.forEach((item, index) => {
+        this.add.text(40, 230 + index * 30, `${item.icon} ${item.name}`, {
+            font: '16px Arial',
+            fill: '#DDDDDD'
+        });
+    });
+}
+
+// ===== CORE GAME SCENES =====
+function preload() {
+    // Show loading progress
+    const loadingText = this.add.text(
+        this.cameras.main.centerX,
+        this.cameras.main.centerY,
+        'Loading...',
+        { font: '16px Arial', fill: '#ffffff' }
+    ).setOrigin(0.5);
+
+    this.load.on('progress', (value) => {
+        loadingText.setText(`Loading: ${Math.round(value * 100)}%`);
+    });
+
+    // Load assets with error handling
+    this.load.image('background', 'background.png')
+        .on('loaderror', () => console.error("Failed to load background"));
+
+    this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml')
+        .on('loaderror', () => console.error("Failed to load hero spritesheet"));
+
+    this.load.image('grass', 'grass.png');
+    this.load.image('tree', 'tree.png');
+    this.load.image('rock1', 'rock1.png');
+    this.load.image('rock2', 'rock2.png');
+
+    this.load.image('main-path', 'main-path.png')
+        .on('loaderror', () => useFallbackPaths = true);
+
+
+
+    this.load.image('corner-path', 'corner-path.png')
+        .on('loaderror', () => useFallbackPaths = true);
+
+
+
+
+
+
+
+}
+
+function create() {
+    // Add background
+    const bg = this.add.image(
+        this.cameras.main.centerX,
+        this.cameras.main.centerY,
+        'background'
+    );
+    bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
+    bg.setDepth(-1);
+
+    // Generate world
+    const cols = Math.floor(this.sys.game.config.width / TILE_SIZE);
+    const rows = Math.floor(this.sys.game.config.height / TILE_SIZE);
+    const occupiedPositions = new Set();
+
+    const grassGroup = this.add.group();
+    const pathGroup = this.add.group();
+    const treeGroup = this.add.group();
+    const rockGroup = this.add.group();
+
+    generatePath(this, cols, rows, pathGroup, occupiedPositions);
+    generateGrass(this, cols, rows, grassGroup, occupiedPositions);
+    generateTrees(this, cols, rows, treeGroup, occupiedPositions);
+    generateRocks(this, cols, rows, rockGroup, occupiedPositions);
+
+    // Create player
+    const startPos = findStartPosition(cols, rows, occupiedPositions);
+    player = this.add.sprite(
+        startPos.x * TILE_SIZE + TILE_SIZE/2,
+        startPos.y * TILE_SIZE + TILE_SIZE/2,
+        'hero'
+    );
+    player.setDepth(player.y + 20);
+
+    // Setup controls and animations
+    setupAnimations(this);
+    cursors = this.input.keyboard.createCursorKeys();
+}
+
+function update() {
+    // Movement handling
+    let moving = false;
+    const speed = 2;
+    let newX = player.x;
+    let newY = player.y;
+    let direction = '';
+
+    if (cursors.left.isDown) {
+        newX -= speed;
+        player.anims.play('walk_left', true);
+        moving = true;
+        direction = 'left';
+    } else if (cursors.right.isDown) {
+        newX += speed;
+        player.anims.play('walk_right', true);
+        moving = true;
+        direction = 'right';
+    } else if (cursors.up.isDown) {
+        newY -= speed;
+        player.anims.play('walk_up', true);
+        moving = true;
+        direction = 'up';
+    } else if (cursors.down.isDown) {
+        newY += speed;
+        player.anims.play('walk_down', true);
+        moving = true;
+        direction = 'down';
+    }
+
+    // Idle animation
+    if (!moving) {
+        if (direction === 'left') player.anims.play('idle_left', true);
+        else if (direction === 'right') player.anims.play('idle_right', true);
+        else if (direction === 'up') player.anims.play('idle_up', true);
+        else player.anims.play('idle_down', true);
+    }
+
+    // Collision detection
+    let canMove = true;
+    const playerBounds = {
+        x: newX - PLAYER_WIDTH/2,
+        y: newY - PLAYER_HEIGHT/2,
+        width: PLAYER_WIDTH,
+        height: PLAYER_HEIGHT
+    };
+
+    for (const tree of trees) {
+        if (checkCollision(playerBounds, tree)) {
+            canMove = false;
+            break;
+        }
+    }
+
+    for (const rock of rocks) {
+        if (checkCollision(playerBounds, rock)) {
+            canMove = false;
+            break;
+        }
+    }
+
+    // Apply movement
+    if (canMove) {
+        player.x = newX;
+        player.y = newY;
+    }
+
+    // Update depths
+    player.setDepth(player.y + 20);
+    trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
+    rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
+}
+
+// ===== GAME CONFIGURATION =====
+const mainConfig = {
+    type: Phaser.AUTO,
+    parent: 'main-game',
+    width: 768,
+    height: 768,
+    pixelArt: true,
+    scene: { preload, create, update },
+    dom: { createContainer: true },
+    scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+};
+
+const sideConfig = {
+    type: Phaser.AUTO,
+    parent: 'side-panel',
+    width: 300,
+    height: 284,
+    pixelArt: true,
+    backgroundColor: '#333333',
+    scene: { create: createSidePanel },
+    dom: { createContainer: true },
+    scale: {
+        mode: Phaser.Scale.NONE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+};
+
+// ===== GAME INITIALIZATION =====
+try {
+
+    const mainGame = new Phaser.Game(mainConfig);
+    const sideGame = new Phaser.Game(sideConfig);
+
+    // Debug checks
+    if (!mainGame.isBooted) console.error("Main game failed to initialize!");
+    if (!sideGame.isBooted) console.error("Side panel failed to initialize!");
+    
+    console.log("Games initialized successfully!");
+} catch (error) {
+    console.error("Game initialization failed:", error);
+}
