@@ -370,7 +370,10 @@ function preload() {
         { font: '16px Arial', fill: '#ffffff' }
     ).setOrigin(0.5);
 
-  
+    this.load.on('progress', (value) => {
+        loadingText.setText(Loading: ${Math.round(value * 100)}%);
+    });
+
     // Load assets with error handling
     this.load.image('background', 'background.png')
         .on('loaderror', () => console.error("Failed to load background"));
