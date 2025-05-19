@@ -448,62 +448,67 @@ function update() {
 
     if (cursors.left.isDown) {
         newX -= speed;
+        direction = 'left';
         player.anims.play('walk_left', true);
         moving = true;
-        direction = 'left';
     } else if (cursors.right.isDown) {
         newX += speed;
+        direction = 'right';
         player.anims.play('walk_right', true);
         moving = true;
-        direction = 'right';
     } else if (cursors.up.isDown) {
         newY -= speed;
+        direction = 'up';
         player.anims.play('walk_up', true);
         moving = true;
-        direction = 'up';
     } else if (cursors.down.isDown) {
         newY += speed;
+        direction = 'down';
         player.anims.play('walk_down', true);
         moving = true;
-        direction = 'down';
     }
 
-    // Idle animation
-    if (!moving) {
-        if (direction === 'left') player.anims.play('idle_left', true);
-        else if (direction === 'right') player.anims.play('idle_right', true);
-        else if (direction === 'up') player.anims.play('idle_up', true);
-        else player.anims.play('idle_down', true);
-    }
-
-    // Collision detection
-    let canMove = true;
-    const playerBounds = {
-        x: newX - PLAYER_WIDTH/2,
-        y: newY - PLAYER_HEIGHT/2,
+    // Collision detection with trees and rocks
+    let collides = false;
+    const testBox = {
+        x: newX - PLAYER_WIDTH / 2,
+        y: newY - PLAYER_HEIGHT / 2,
         width: PLAYER_WIDTH,
         height: PLAYER_HEIGHT
     };
 
     for (const tree of trees) {
-        if (checkCollision(playerBounds, tree)) {
-            canMove = false;
+        if (checkCollision(testBox, tree)) {
+            collides = true;
             break;
         }
     }
 
-    for (const rock of rocks) {
-        if (checkCollision(playerBounds, rock)) {
-            canMove = false;
-            break;
+    if (!collides) {
+        for (const rock of rocks) {
+            if (checkCollision(testBox, rock)) {
+                collides = true;
+                break;
+            }
         }
     }
 
-    // Apply movement
-    if (canMove) {
+    if (!collides) {
         player.x = newX;
         player.y = newY;
+        player.setDepth(player.y + 20);
     }
+
+    // Idle animations
+    if (!moving) {
+        const currentAnim = player.anims.currentAnim?.key;
+        if (currentAnim?.startsWith('walk_')) {
+            const idleKey = currentAnim.replace('walk_', 'idle_');
+            player.anims.play(idleKey, true);
+        }
+    }
+}
+
 
     // Update depths
     player.setDepth(player.y + 20);
