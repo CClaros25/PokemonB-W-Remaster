@@ -362,14 +362,7 @@ function createSidePanel() {
 
 // ===== CORE GAME SCENES =====
 function preload() {
-    // Show loading progress
-    const loadingText = this.add.text(
-        this.cameras.main.centerX,
-        this.cameras.main.centerY,
-        'Loading...',
-        { font: '16px Arial', fill: '#ffffff' }
-    ).setOrigin(0.5);
-
+ 
   
     // Load assets with error handling
     this.load.image('background', 'background.png')
