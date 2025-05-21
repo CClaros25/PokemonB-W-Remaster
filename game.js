@@ -4,8 +4,8 @@ const PLAYER_HEIGHT = 48;
 const TREE_WIDTH = 64;
 const TREE_HEIGHT = 96;
 const TREE_HITBOX_HEIGHT = 30;
-const ROCK_WIDTH = 32;
-const ROCK_HEIGHT = 32;
+const ROCK_WIDTH = 16;
+const ROCK_HEIGHT = 16;
 const ROCK_SCALE = 0.3;
 const TILE_SIZE = 64;
 
