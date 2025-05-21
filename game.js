@@ -6,7 +6,7 @@ const TREE_HEIGHT = 96;
 const TREE_HITBOX_HEIGHT = 30;
 const ROCK_WIDTH = 32;
 const ROCK_HEIGHT = 32;
-const ROCK_SCALE = 0.6;
+const ROCK_SCALE = 0.3;
 const TILE_SIZE = 64;
 
 // ===== GAME STATE =====
