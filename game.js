@@ -6,7 +6,7 @@ const TREE_HEIGHT = 96;
 const TREE_HITBOX_HEIGHT = 30;
 const ROCK_WIDTH = 16;
 const ROCK_HEIGHT = 16;
-const ROCK_SCALE = 0.3;
+const ROCK_SCALE = 0.2;
 const TILE_SIZE = 64;
 
 // ===== GAME STATE =====
@@ -48,34 +48,6 @@ function createPathTile(scene, x, y, isCorner = false, rotation = 0) {
 
 function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
     const startEdge = Phaser.Math.Between(0, 3);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     let x, y, dirX, dirY;
 
     switch(startEdge) {
@@ -113,11 +85,6 @@ function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
 
         pathTile.setDepth(0);
         pathGroup.add(pathTile);
-
-
-
-
-
         if (Phaser.Math.Between(0, 100) < 30 && i > 2) {
             const possibleDirs = dirX === 0 ? 
                 [{x: 1, y: 0}, {x: -1, y: 0}] : 
@@ -142,45 +109,7 @@ function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
         y += dirY;
         if (x <= 0 || x >= cols-1 || y <= 0 || y >= rows-1) break;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
-
 // ===== ENVIRONMENT GENERATION =====
 function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
     const clumpCount = 15;
@@ -299,12 +228,6 @@ function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
 
             for (let dx = -2; dx <= 2; dx++) {
                 for (let dy = -2; dy <= 2; dy++) {
-
-
-
-
-
-
                     if (occupiedPositions.has(`${rockX + dx},${rockY + dy}`)) {
                         validPosition = false;
                         break;
