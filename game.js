@@ -421,7 +421,7 @@ function create() {
 function update() {
     // Movement handling
     let moving = false;
-    const speed = 1.5;
+    const speed = 1.6;
     let newX = player.x;
     let newY = player.y;
     let direction = '';
