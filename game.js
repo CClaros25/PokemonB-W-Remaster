@@ -460,6 +460,12 @@ function update() {
         direction = 'down';
     }
 
+    if (!moving) {
+        if (direction === 'left') player.anims.play('idle_left', true);
+        else if (direction === 'right') player.anims.play('idle_right', true);
+        else if (direction === 'up') player.anims.play('idle_up', true);
+        else player.anims.play('idle_down', true);
+    }
     // Collision detection
     let canMove = true;
     const playerBounds = {
