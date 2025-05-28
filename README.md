@@ -3,7 +3,7 @@
 ## How to play
 
 - Move around in the grass
-- You will have a 1/3 chance to run into any pokemon from Gen 1 - Gen 3
+- You will have a 1/3 chance to run into any pokemon from Gen 1 - Gen 5
 - Using locatestorage it allows for you caught pokemon to be saved in your pokedex
 
 ## Sprite Info
