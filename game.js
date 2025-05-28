@@ -305,60 +305,36 @@ function setupAnimations(scene) {
 
 // ===== SIDE PANEL =====
 function createSidePanel() {
-    this.add.text(this.cameras.main.centerX, 30, 'PLAYER STATS', {
-        font: '24px Arial',
-        fill: '#FFFFFF'
-    }).setOrigin(0.5);
-
-    const statsY = 80;
-    const statSpacing = 40;
-    
-    this.add.text(20, statsY, '❤ Health:', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-    this.add.text(120, statsY, '████████', {
-        font: '18px Arial',
-        fill: '#FF5555'
-    });
-
-    this.add.text(20, statsY + statSpacing, '⚡ Level:', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-    this.add.text(120, statsY + statSpacing, '1', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-
-    this.add.text(20, statsY + statSpacing * 2, '✦ XP:', {
-        font: '18px Arial',
-        fill: '#FFFFFF'
-    });
-    this.add.text(120, statsY + statSpacing * 2, '0/100', {
-        font: '18px Arial',
-        fill: '#55FF55'
-    });
-
-    this.add.text(this.cameras.main.centerX, 200, 'INVENTORY', {
-        font: '20px Arial',
-        fill: '#FFFFFF'
-    }).setOrigin(0.5);
-
-    const inventoryItems = [
-        { name: 'Sword', icon: '⚔' },
-        { name: 'Shield', icon: '🛡' },
-        { name: 'Potion', icon: '🧪' }
+    // Coordinates for the grid
+    const grid = [
+        { key: 'pkmn',   col: 0, row: 0 },
+        { key: 'dex',    col: 1, row: 0 },
+        { key: 'bag',    col: 0, row: 1 },
+        { key: 'save',   col: 1, row: 1 }
     ];
-    
-    inventoryItems.forEach((item, index) => {
-        this.add.text(40, 230 + index * 30, `${item.icon} ${item.name}`, {
-            font: '16px Arial',
-            fill: '#DDDDDD'
+    const cellSize = 120;
+    const startX = 50;
+    const startY = 50;
+
+    // Add 2x2 grid of icons
+    grid.forEach(item => {
+        const x = startX + item.col * cellSize;
+        const y = startY + item.row * cellSize;
+
+        // Add unhovered image
+        const icon = this.add.image(x, y, `${item.key}_unhovered`).setOrigin(0, 0).setInteractive();
+
+        // On hover, set to _hovered version
+        icon.on('pointerover', () => {
+            icon.setTexture(`${item.key}_hovered`);
+        });
+
+        // On out, set back to _unhovered version
+        icon.on('pointerout', () => {
+            icon.setTexture(`${item.key}_unhovered`);
         });
     });
 }
-
 // ===== CORE GAME SCENES =====
 function preload() {
     console.log("Loading game assets...");
@@ -373,6 +349,14 @@ function preload() {
     this.load.image('tree', 'tree.png');
     this.load.image('rock1', 'rock1.png');
     this.load.image('rock2', 'rock2.png');
+    this.load.image('pkmn_unhovered', 'pkmn_unhovered.png');
+    this.load.image('dex_unhovered', 'dex_unhovered.png');
+    this.load.image('bag_unhovered', 'bag_unhovered.png');
+    this.load.image('save_unhovered', 'save_unhovered.png');
+    this.load.image('pkmn_hovered', 'pkmn_hovered.png');
+    this.load.image('dex_hovered', 'dex_hovered.png');
+    this.load.image('bag_hovered', 'bag_hovered.png');
+    this.load.image('save_hovered', 'save_hovered.png');
     
     this.load.image('main-path', 'main-path.png')
         .on('loaderror', () => {
