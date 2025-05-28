@@ -247,7 +247,7 @@ function generateRocks(scene, cols, rows, rockGroup, occupiedPositions) {
         const rock = scene.add.image(x, y, `rock${rockType}`);
         rock.setScale(ROCK_SCALE);
         rock.setOrigin(0.5);
-        rock.setDepth(y);
+        rock.setDepth(y + .5);
         rockGroup.add(rock);
 
         const scaledWidth = ROCK_WIDTH * ROCK_SCALE;
@@ -471,7 +471,7 @@ function update() {
     }
     for (const rock of rocks) {
         if (checkCollision(playerBounds, rock)) {
-            canMove = false;
+            canMove  = false;
             break;
         }
     }
