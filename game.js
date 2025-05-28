@@ -430,9 +430,14 @@ function create() {
 }
 
 function update() {
-    // Movement handling
     let moving = false;
-    const speed = 0.5;
+    
+    // Sprint logic
+    const baseSpeed = 0.5;
+    const sprintSpeed = 1.2;
+    const isSprinting = shiftKey.isDown;
+    const speed = isSprinting ? sprintSpeed : baseSpeed;
+
     let newX = player.x;
     let newY = player.y;
     let direction = '';
@@ -457,15 +462,14 @@ function update() {
         player.anims.play('walk_down', true);
         moving = true;
         direction = 'down';
+    } else {
+        // Idle animation
+        if (direction) player.anims.play(`idle_${direction}`, true);
     }
 
-    // Idle animation
-    if (!moving) {
-        if (direction === 'left') player.anims.play('idle_left', true);
-        else if (direction === 'right') player.anims.play('idle_right', true);
-        else if (direction === 'up') player.anims.play('idle_up', true);
-        else player.anims.play('idle_down', true);
-    }
+    // Apply movement
+    player.setPosition(newX, newY);
+}
 
     // Collision detection
     let canMove = true;
