@@ -1,5 +1,5 @@
 // ===== GAME CONSTANTS =====
-const PLAYER_WIDTh = 32;
+const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 48;
 const TREE_WIDTH = 64;
 const TREE_HEIGHT = 96;
