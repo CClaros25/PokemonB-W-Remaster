@@ -10,7 +10,7 @@ const ROCK_SCALE = 0.2;
 const TILE_SIZE = 64;
 
 // ===== GAME STATE =====
-let player, cursors, trees = [], rocks = [];
+let player, cursors, trees = [], rocks = [], shiftKey;
 let useFallbackPaths = false;
 
 // ===== UTILITY FUNCTIONS =====
@@ -427,6 +427,7 @@ function create() {
     // Setup controls and animations
     setupAnimations(this);
     cursors = this.input.keyboard.createCursorKeys();
+    shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 }
 
 function update() {
