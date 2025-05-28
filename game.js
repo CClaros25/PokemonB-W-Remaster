@@ -432,10 +432,7 @@ function create() {
 function update() {
     let moving = false;
 
-    const baseSpeed = 0.5;
-    const sprintSpeed = 1.2;
-    const isSprinting = shiftKey.isDown;
-    const speed = isSprinting ? sprintSpeed : baseSpeed;
+     let speed = 0.5;
 
     let newX = player.x;
     let newY = player.y;
