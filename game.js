@@ -510,7 +510,7 @@ const sideConfig = {
     height: 450,
     pixelArt: true,
     backgroundColor: '#333333',
-    scene: { preload: preloadSidePanel, create: createSidePanel },
+    scene: { create: createSidePanel, preload: preloadSidePanel },
     dom: { createContainer: true },
     scale: {
         mode: Phaser.Scale.NONE,
