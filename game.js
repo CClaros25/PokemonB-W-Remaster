@@ -431,46 +431,43 @@ function create() {
 
 function update() {
     let moving = false;
-    
-    // Sprint logic
-    const baseSpeed = 0.5;
+
+    const speed = 0.5;
     const sprintSpeed = 1.2;
     const isSprinting = shiftKey.isDown;
-    const speed = isSprinting ? sprintSpeed : baseSpeed;
+    const speed = isSprinting ? sprintSpeed : Speed;
 
     let newX = player.x;
     let newY = player.y;
-    let direction = '';
 
     if (cursors.left.isDown) {
         newX -= speed;
         player.anims.play('walk_left', true);
         moving = true;
-        direction = 'left';
+        lastDirection = 'left';
     } else if (cursors.right.isDown) {
         newX += speed;
         player.anims.play('walk_right', true);
         moving = true;
-        direction = 'right';
+        lastDirection = 'right';
     } else if (cursors.up.isDown) {
         newY -= speed;
         player.anims.play('walk_up', true);
         moving = true;
-        direction = 'up';
+        lastDirection = 'up';
     } else if (cursors.down.isDown) {
         newY += speed;
         player.anims.play('walk_down', true);
         moving = true;
-        direction = 'down';
+        lastDirection = 'down';
     } else {
-        // Idle animation
-        if (direction) player.anims.play(`idle_${direction}`, true);
+        // Play idle animation in the last moved direction
+        player.anims.play(`idle_${lastDirection}`, true);
     }
 
     // Apply movement
     player.setPosition(newX, newY);
 }
-
     // Collision detection
     let canMove = true;
     const playerBounds = {
