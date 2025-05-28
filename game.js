@@ -432,10 +432,14 @@ function create() {
 function update() {
     let moving = false;
 
-     let speed = 0.5;
+    const baseSpeed = 0.5;
+    const sprintSpeed = 1.2;
+    const isSprinting = shiftKey.isDown;
+    const speed = isSprinting ? sprintSpeed : baseSpeed;
 
     let newX = player.x;
     let newY = player.y;
+    let lastDirection = 'down'; // initialize lastDirection somewhere globally or in scene
 
     if (cursors.left.isDown) {
         newX -= speed;
@@ -460,7 +464,7 @@ function update() {
     } else {
         player.anims.play(`idle_${lastDirection}`, true);
     }
-    // Apply movement
+
     player.setPosition(newX, newY);
 }
     // Collision detection
