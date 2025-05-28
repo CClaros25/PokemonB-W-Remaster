@@ -349,14 +349,7 @@ function preload() {
     this.load.image('tree', 'tree.png');
     this.load.image('rock1', 'rock1.png');
     this.load.image('rock2', 'rock2.png');
-    this.load.image('pkmn_unhovered', 'pkmn_unhovered.png');
-    this.load.image('dex_unhovered', 'dex_unhovered.png');
-    this.load.image('bag_unhovered', 'bag_unhovered.png');
-    this.load.image('save_unhovered', 'save_unhovered.png');
-    this.load.image('pkmn_hovered', 'pkmn_hovered.png');
-    this.load.image('dex_hovered', 'dex_hovered.png');
-    this.load.image('bag_hovered', 'bag_hovered.png');
-    this.load.image('save_hovered', 'save_hovered.png');
+   
     
     this.load.image('main-path', 'main-path.png')
         .on('loaderror', () => {
@@ -372,6 +365,17 @@ function preload() {
     this.load.on('complete', () => {
         console.log("All assets loaded successfully!");
     });
+}
+
+function preloadSidePanel() {
+    this.load.image('pkmn_unhovered', 'pkmn_unhovered.png');
+    this.load.image('dex_unhovered', 'dex_unhovered.png');
+    this.load.image('bag_unhovered', 'bag_unhovered.png');
+    this.load.image('save_unhovered', 'save_unhovered.png');
+    this.load.image('pkmn_hovered', 'pkmn_hovered.png');
+    this.load.image('dex_hovered', 'dex_hovered.png');
+    this.load.image('bag_hovered', 'bag_hovered.png');
+    this.load.image('save_hovered', 'save_hovered.png');
 }
 
 function create() {
@@ -502,11 +506,11 @@ const mainConfig = {
 const sideConfig = {
     type: Phaser.AUTO,
     parent: 'side-panel',
-    width: 300,
-    height: 284,
+    width: 600,
+    height: 450,
     pixelArt: true,
     backgroundColor: '#333333',
-    scene: { create: createSidePanel },
+    scene: { preload: preloadSidePanel, create: createSidePanel },
     dom: { createContainer: true },
     scale: {
         mode: Phaser.Scale.NONE,
