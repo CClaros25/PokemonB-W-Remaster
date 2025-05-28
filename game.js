@@ -461,10 +461,11 @@ function update() {
         moving = true;
         lastDirection = 'down';
     } else {
-        // Play idle animation in the last moved direction
         player.anims.play(`idle_${lastDirection}`, true);
     }
 
+    player.setPosition(newX, newY);
+}
     // Apply movement
     player.setPosition(newX, newY);
 }
