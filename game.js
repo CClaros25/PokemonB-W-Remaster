@@ -431,40 +431,33 @@ function create() {
 }
 
 function update() {
+    // Movement handling
     let moving = false;
-    const baseSpeed = 0.5;
-    const sprintSpeed = 1.2;
-    const isSprinting = shiftKey.isDown;
-    const speed = isSprinting ? sprintSpeed : baseSpeed;
-
+    const speed = 0.5;
     let newX = player.x;
     let newY = player.y;
-
-    // Use persistent lastDirection
-    if (!this.lastDirection) this.lastDirection = 'down';
+    let direction = '';
 
     if (cursors.left.isDown) {
         newX -= speed;
         player.anims.play('walk_left', true);
         moving = true;
-        this.lastDirection = 'left';
+        direction = 'left';
     } else if (cursors.right.isDown) {
         newX += speed;
         player.anims.play('walk_right', true);
         moving = true;
-        this.lastDirection = 'right';
+        direction = 'right';
     } else if (cursors.up.isDown) {
         newY -= speed;
         player.anims.play('walk_up', true);
         moving = true;
-        this.lastDirection = 'up';
+        direction = 'up';
     } else if (cursors.down.isDown) {
         newY += speed;
         player.anims.play('walk_down', true);
         moving = true;
-        this.lastDirection = 'down';
-    } else {
-        player.anims.play(`idle_${this.lastDirection}`, true);
+        direction = 'down';
     }
 
     // Collision detection
