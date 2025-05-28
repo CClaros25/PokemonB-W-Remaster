@@ -312,7 +312,7 @@ function createSidePanel() {
         { key: 'bag',    col: 0, row: 1 },
         { key: 'save',   col: 1, row: 1 }
     ];
-    const cellSize = 120;
+    const cellSize = 180;
     const startX = 50;
     const startY = 50;
 
