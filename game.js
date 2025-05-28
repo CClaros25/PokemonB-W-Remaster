@@ -431,7 +431,6 @@ function create() {
 
 function update() {
     let moving = false;
-
     const baseSpeed = 0.5;
     const sprintSpeed = 1.2;
     const isSprinting = shiftKey.isDown;
@@ -439,34 +438,34 @@ function update() {
 
     let newX = player.x;
     let newY = player.y;
-    let lastDirection = 'down'; // initialize lastDirection somewhere globally or in scene
+
+    // Use persistent lastDirection
+    if (!this.lastDirection) this.lastDirection = 'down';
 
     if (cursors.left.isDown) {
         newX -= speed;
         player.anims.play('walk_left', true);
         moving = true;
-        lastDirection = 'left';
+        this.lastDirection = 'left';
     } else if (cursors.right.isDown) {
         newX += speed;
         player.anims.play('walk_right', true);
         moving = true;
-        lastDirection = 'right';
+        this.lastDirection = 'right';
     } else if (cursors.up.isDown) {
         newY -= speed;
         player.anims.play('walk_up', true);
         moving = true;
-        lastDirection = 'up';
+        this.lastDirection = 'up';
     } else if (cursors.down.isDown) {
         newY += speed;
         player.anims.play('walk_down', true);
         moving = true;
-        lastDirection = 'down';
+        this.lastDirection = 'down';
     } else {
-        player.anims.play(`idle_${lastDirection}`, true);
+        player.anims.play(`idle_${this.lastDirection}`, true);
     }
 
-    player.setPosition(newX, newY);
-}
     // Collision detection
     let canMove = true;
     const playerBounds = {
@@ -482,7 +481,6 @@ function update() {
             break;
         }
     }
-    
     for (const rock of rocks) {
         if (checkCollision(playerBounds, rock)) {
             canMove = false;
