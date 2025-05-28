@@ -460,9 +460,6 @@ function update() {
     } else {
         player.anims.play(`idle_${lastDirection}`, true);
     }
-
-    player.setPosition(newX, newY);
-}
     // Apply movement
     player.setPosition(newX, newY);
 }
