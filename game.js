@@ -3,7 +3,7 @@ const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 48;
 const TREE_WIDTH = 64;
 const TREE_HEIGHT = 96;
-const TREE_HITBOX_HEIGHT = 30;
+const TREE_HITBOX_HEIGHT = 20;
 const ROCK_WIDTH = 16;
 const ROCK_HEIGHT = 16;
 const ROCK_SCALE = 0.2;
@@ -198,7 +198,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
 
             trees.push({
                 sprite: tree,
-                x: treeX - TREE_WIDTH/2,
+                x: treeX - TREE_WIDTH / 2,
                 y: treeY - TREE_HITBOX_HEIGHT,
                 width: TREE_WIDTH,
                 height: TREE_HITBOX_HEIGHT
@@ -421,7 +421,7 @@ function create() {
 function update() {
     // Movement handling
     let moving = false;
-    const speed = 1.3;
+    const speed = shiftKey.isDown ? 2 : 1.3;
     let newX = player.x;
     let newY = player.y;
     let direction = '';
