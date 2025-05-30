@@ -191,7 +191,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
             const treeSpriteY = patchY * TILE_SIZE + TILE_SIZE / 2 - 20; // draw sprite at this Y
 
         const tree = scene.add.image(treeX, treeSpriteY, 'tree');
-        tree.setScale(2);
+        tree.setScale(0.7);
         tree.setOrigin(0.5, 1);
         tree.setDepth(treeSpriteY);
         treeGroup.add(tree);
