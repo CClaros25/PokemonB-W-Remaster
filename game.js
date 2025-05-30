@@ -188,28 +188,26 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
 
         if (canPlaceTree && Math.random() < 0.5) {
             const treeX = patchX * TILE_SIZE + TILE_SIZE / 2;
-            const treeY = patchY * TILE_SIZE + TILE_SIZE / 2;
+            const treeSpriteY = patchY * TILE_SIZE + TILE_SIZE / 2 - 20; // draw sprite at this Y
 
-            const tree = scene.add.image(treeX, treeY - 20, 'tree');
-            tree.setScale(1);
-            tree.setOrigin(0.5, 1);
-            tree.setDepth(treeY);
-            treeGroup.add(tree);
+        const tree = scene.add.image(treeX, treeSpriteY, 'tree');
+        tree.setScale(2);
+        tree.setOrigin(0.5, 1);
+        tree.setDepth(treeSpriteY);
+        treeGroup.add(tree);
 
+        const hitboxHeight = TREE_HEIGHT * 0.15;
+        const frontThresholdY = scene.sys.game.config.height - 120;
 
-            const frontThresholdY = scene.sys.game.config.height - 120;
-
-            if (treeY < frontThresholdY) {
-   
+        if (treeSpriteY < frontThresholdY) {
             trees.push({
-                sprite: tree,
-                x: treeX - TREE_WIDTH / 2,
-                y: treeY - TREE_HITBOX_HEIGHT,
-                width: TREE_WIDTH,
-                height: TREE_HITBOX_HEIGHT
-            });
-        }
-
+            sprite: tree,
+            x: treeX - TREE_WIDTH / 2,
+            y: treeSpriteY - hitboxHeight, // anchor hitbox to bottom of sprite
+            width: TREE_WIDTH,
+            height: hitboxHeight
+        });
+    }
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dy = -1; dy <= 1; dy++) {
                     occupiedPositions.add(`${patchX + dx},${patchY + dy}`);
