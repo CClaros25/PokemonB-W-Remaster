@@ -1,8 +1,8 @@
 // ===== GAME CONSTANTS =====
 const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 48;
-const TREE_WIDTH = 21.33;
-const TREE_HEIGHT = 32;
+const TREE_WIDTH = 42.66;
+const TREE_HEIGHT = 64;
 const TREE_HITBOX_HEIGHT = 30;
 const ROCK_WIDTH = 16;
 const ROCK_HEIGHT = 16;
