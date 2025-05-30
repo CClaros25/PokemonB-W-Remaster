@@ -1,8 +1,8 @@
 // ===== GAME CONSTANTS =====
 const PLAYER_WIDTH = 32;
 const PLAYER_HEIGHT = 48;
-const TREE_WIDTH = 64;
-const TREE_HEIGHT = 96;
+const TREE_WIDTH = 21.33;
+const TREE_HEIGHT = 32;
 const TREE_HITBOX_HEIGHT = 30;
 const ROCK_WIDTH = 16;
 const ROCK_HEIGHT = 16;
@@ -196,6 +196,11 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
             tree.setDepth(treeY);
             treeGroup.add(tree);
 
+
+            const frontThresholdY = scene.sys.game.config.height - 120;
+
+            if (treeY < frontThresholdY) {
+   
             trees.push({
                 sprite: tree,
                 x: treeX - TREE_WIDTH / 2,
@@ -203,6 +208,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
                 width: TREE_WIDTH,
                 height: TREE_HITBOX_HEIGHT
             });
+        }
 
             for (let dx = -1; dx <= 1; dx++) {
                 for (let dy = -1; dy <= 1; dy++) {
