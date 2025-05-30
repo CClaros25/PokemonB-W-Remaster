@@ -191,7 +191,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
             const treeY = patchY * TILE_SIZE + TILE_SIZE / 2;
 
             const tree = scene.add.image(treeX, treeY - 20, 'tree');
-            tree.setScale(2);
+            tree.setScale(1);
             tree.setOrigin(0.5, 1);
             tree.setDepth(treeY);
             treeGroup.add(tree);
@@ -427,7 +427,7 @@ function create() {
 function update() {
     // Movement handling
     let moving = false;
-    const speed = shiftKey.isDown ? 2 : 1.3;
+    const speed = shiftKey.isDown ? 2 : 1.5;
     let newX = player.x;
     let newY = player.y;
     let direction = '';
