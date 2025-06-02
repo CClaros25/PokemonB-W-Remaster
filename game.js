@@ -425,7 +425,7 @@ function create() {
 function update() {
     // Movement handling
     let moving = false;
-    const speed = shiftKey.isDown ? 2 : 1.5;
+    const speed = shiftKey.isDown ? 2.5 : 1.5;
     let newX = player.x;
     let newY = player.y;
     let direction = '';
