@@ -113,7 +113,7 @@ function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
 // ===== ENVIRONMENT GENERATION =====
 function generateGrass(scene, cols, rows, grassGroup, occupiedPositions) {
     const clumpCount = 15;
-    const minCclumpSize = 3;
+    const minClumpSize = 3;
     const maxClumpSize = 8;
     const clumpSpacing = 3;
     const clumpCenters = [];
