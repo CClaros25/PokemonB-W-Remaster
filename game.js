@@ -309,35 +309,29 @@ frameRate: 1
 
 // ===== SIDE PANEL =====
 function createSidePanel() {
-// Coordinates for the grid
-const grid = [
-{ key: 'pkmn', col: 0, row: 0 },
-{ key: 'dex', col: 1, row: 0 },
-{ key: 'bag', col: 0, row: 1 },
-{ key: 'save', col: 1, row: 1 }
-];
-const cellSize = 180;
-const startX = 50;
-const startY = 50;
+  const cellSizeX = 487 + 20; // icon width + gap
+  const cellSizeY = 231 + 20; // icon height + gap
+  const startX = 40;
+  const startY = 40;
+  const grid = [
+    { key: 'pkmn', col: 0, row: 0 },
+    { key: 'dex', col: 1, row: 0 },
+    { key: 'bag', col: 0, row: 1 },
+    { key: 'save', col: 1, row: 1 }
+  ];
 
-// Add 2x2 grid of icons
-grid.forEach(item => {
-const x = startX + item.col * cellSize;
-const y = startY + item.row * cellSize;
+  grid.forEach(item => {
+    const x = startX + item.col * cellSizeX;
+    const y = startY + item.row * cellSizeY;
+    const icon = this.add.image(x, y, `${item.key}_unhovered`).setOrigin(0, 0).setInteractive();
 
-// Add unhovered image
-const icon = this.add.image(x, y, `${item.key}_unhovered`).setOrigin(0, 0).setInteractive();
-
-// On hover, set to _hovered version
-icon.on('pointerover', () => {
-icon.setTexture(`${item.key}_hovered`);
-});
-
-// On out, set back to _unhovered version
-icon.on('pointerout', () => {
-icon.setTexture(`${item.key}_unhovered`);
-});
-});
+    icon.on('pointerover', () => {
+      icon.setTexture(`${item.key}_hovered`);
+    });
+    icon.on('pointerout', () => {
+      icon.setTexture(`${item.key}_unhovered`);
+    });
+  });
 }
 // ===== CORE GAME SCENES =====
 function preload() {
@@ -510,8 +504,8 @@ const mainConfig = {
 const sideConfig = {
   type: Phaser.AUTO,
   parent: 'side-panel',
-  width: 600,
-  height: 450,
+  width: 1074,
+  height: 562,
   pixelArt: true,
   backgroundColor: '#333333',
   scene: { create: createSidePanel, preload: preloadSidePanel },
