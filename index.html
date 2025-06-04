@@ -6,53 +6,50 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
   <style>
     body {
-      margin: 0;
-      background: #111;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
-
-    #container {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      align-items: flex-start;
-      gap: 20px;
-      padding: 20px;
-    }
-
-    #main-game, #side-panel {
-      position: relative;
-      overflow: hidden;
-    }
-
-    #main-game {
-      width: 768px;
-      height: 768px;
-    }
-
-    #side-panel {
-      width: 588px;
-      height: 332px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #222;
-      border-radius: 5px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.7);
-      border-left: 2px solid #444;
-      overflow: hidden;
-      position: relative;
-    }
-
-    #side-panel canvas {
-      display: block;
-      margin: auto;
-    }
+  margin: 0;
+  background: #111;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+#container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;      /* <-- Center vertically */
+  gap: 20px;
+  padding: 20px;
+  height: 100vh;            /* <-- Required for vertical centering */
+  box-sizing: border-box;
+}
+#main-game, #side-panel {
+  position: relative;
+  overflow: hidden;
+}
+#main-game {
+  width: 768px;
+  height: 768px;
+}
+#side-panel {
+  width: 684px;
+  height: 378px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #222;
+  border-radius: 5px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.7);
+  border-left: 2px solid #444;
+  overflow: hidden;
+  position: relative;
+}
+#side-panel canvas {
+  display: block;
+  margin: auto;
+}
 
     canvas {
       display: block;
