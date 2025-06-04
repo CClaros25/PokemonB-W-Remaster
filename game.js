@@ -309,13 +309,20 @@ frameRate: 1
 
 // ===== SIDE PANEL =====
 function createSidePanel() {
-  const scale = 0.6;
-  const iconWidth = 487 * scale;  // ≈292
-  const iconHeight = 231 * scale; // ≈139
-  const cellSizeX = iconWidth + 20;
-  const cellSizeY = iconHeight + 20;
-  const startX = 40;
-  const startY = 40;
+  const canvasWidth = 684;
+  const canvasHeight = 378;
+  const iconWidth = 487;
+  const iconHeight = 231;
+  const gap = 20;
+  const cols = 2;
+  const rows = 2;
+
+  const cellWidth = (canvasWidth - gap) / cols;    // 332
+  const cellHeight = (canvasHeight - gap) / rows;  // 179
+  const scale = Math.min(cellWidth / iconWidth, cellHeight / iconHeight); // ~0.68
+
+  const startX = 0;
+  const startY = 0;
   const grid = [
     { key: 'pkmn', col: 0, row: 0 },
     { key: 'dex', col: 1, row: 0 },
@@ -324,8 +331,8 @@ function createSidePanel() {
   ];
 
   grid.forEach(item => {
-    const x = startX + item.col * cellSizeX;
-    const y = startY + item.row * cellSizeY;
+    const x = startX + item.col * (cellWidth + gap);
+    const y = startY + item.row * (cellHeight + gap);
     const icon = this.add.image(x, y, `${item.key}_unhovered`)
       .setOrigin(0, 0)
       .setScale(scale)
