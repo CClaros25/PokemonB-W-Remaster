@@ -309,10 +309,11 @@ frameRate: 1
 
 // ===== SIDE PANEL =====
 function createSidePanel() {
-  const iconWidth = 292; // half of 487
-  const iconHeight = 139; // half of 231
-  const cellSizeX = iconWidth + 10; // icon width + gap
-  const cellSizeY = iconHeight + 10; // icon height + gap
+  const scale = 0.6;
+  const iconWidth = 487 * scale;  // ≈292
+  const iconHeight = 231 * scale; // ≈139
+  const cellSizeX = iconWidth + 20;
+  const cellSizeY = iconHeight + 20;
   const startX = 40;
   const startY = 40;
   const grid = [
@@ -327,7 +328,7 @@ function createSidePanel() {
     const y = startY + item.row * cellSizeY;
     const icon = this.add.image(x, y, `${item.key}_unhovered`)
       .setOrigin(0, 0)
-      .setScale(0.5) // Scale down images to half
+      .setScale(scale)
       .setInteractive();
 
     icon.on('pointerover', () => {
@@ -338,6 +339,7 @@ function createSidePanel() {
     });
   });
 }
+
 // ===== CORE GAME SCENES =====
 function preload() {
 console.log("Loading game assets...");
