@@ -311,8 +311,8 @@ frameRate: 1
 function createSidePanel() {
   const iconWidth = 292; // half of 487
   const iconHeight = 139; // half of 231
-  const cellSizeX = iconWidth + 20; // icon width + gap
-  const cellSizeY = iconHeight + 20; // icon height + gap
+  const cellSizeX = iconWidth + 10; // icon width + gap
+  const cellSizeY = iconHeight + 10; // icon height + gap
   const startX = 40;
   const startY = 40;
   const grid = [
