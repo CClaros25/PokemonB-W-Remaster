@@ -17,35 +17,35 @@
     }
 
     #container {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 20px;
-      padding: 20px;
-      box-sizing: border-box;
-      max-width: 1100px;
-    }
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px;
+}
 
-    #main-game {
-      width: 768px;
-      height: 768px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.7);
-      background: #7CFC00;
-    }
+#main-game, #side-panel {
+  position: relative;
+  overflow: hidden;
+}
 
-    #side-panel {
-      width: 600px;
-      height: 450px;
-      background: #222;
-      border-radius: 5px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      border-left: 2px solid #444;
-    }
+#main-game {
+  width: 768px;
+  height: 768px;
+}
 
+#side-panel {
+  width: 600px;
+  height: 450px;
+}
+
+#main-game canvas,
+#side-panel canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
     canvas {
       display: block;
       image-rendering: pixelated;
