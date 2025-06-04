@@ -494,28 +494,32 @@ rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
 
 // ===== GAME CONFIGURATION =====
 const mainConfig = {
-type: Phaser.AUTO,
-parent: 'main-game',
-pixelArt: true,
-scene: { preload, create, update },
-dom: { createContainer: true },
-scale: {
-mode: Phaser.Scale.NONE,
-autoCenter: Phaser.Scale.CENTER_BOTH
-}
+  type: Phaser.AUTO,
+  parent: 'main-game',
+  width: 768,
+  height: 768,
+  pixelArt: true,
+  scene: { preload, create, update },
+  dom: { createContainer: true },
+  scale: {
+    mode: Phaser.Scale.NONE,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  }
 };
 
 const sideConfig = {
-type: Phaser.AUTO,
-parent: 'side-panel',
-pixelArt: true,
-backgroundColor: '#333333',
-scene: { create: createSidePanel, preload: preloadSidePanel },
-dom: { createContainer: true },
-scale: {
-mode: Phaser.Scale.NONE,
-autoCenter: Phaser.Scale.CENTER_BOTH
-}
+  type: Phaser.AUTO,
+  parent: 'side-panel',
+  width: 600,
+  height: 450,
+  pixelArt: true,
+  backgroundColor: '#333333',
+  scene: { create: createSidePanel, preload: preloadSidePanel },
+  dom: { createContainer: true },
+  scale: {
+    mode: Phaser.Scale.NONE,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  }
 };
 
 // ===== GAME INITIALIZATION =====
