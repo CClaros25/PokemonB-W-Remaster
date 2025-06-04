@@ -309,8 +309,10 @@ frameRate: 1
 
 // ===== SIDE PANEL =====
 function createSidePanel() {
-  const cellSizeX = 487 + 20; // icon width + gap
-  const cellSizeY = 231 + 20; // icon height + gap
+  const iconWidth = 244; // half of 487
+  const iconHeight = 116; // half of 231
+  const cellSizeX = iconWidth + 20; // icon width + gap
+  const cellSizeY = iconHeight + 20; // icon height + gap
   const startX = 40;
   const startY = 40;
   const grid = [
@@ -323,7 +325,10 @@ function createSidePanel() {
   grid.forEach(item => {
     const x = startX + item.col * cellSizeX;
     const y = startY + item.row * cellSizeY;
-    const icon = this.add.image(x, y, `${item.key}_unhovered`).setOrigin(0, 0).setInteractive();
+    const icon = this.add.image(x, y, `${item.key}_unhovered`)
+      .setOrigin(0, 0)
+      .setScale(0.5) // Scale down images to half
+      .setInteractive();
 
     icon.on('pointerover', () => {
       icon.setTexture(`${item.key}_hovered`);
@@ -504,8 +509,8 @@ const mainConfig = {
 const sideConfig = {
   type: Phaser.AUTO,
   parent: 'side-panel',
-  width: 1074,
-  height: 562,
+  width: 588,
+  height: 332,
   pixelArt: true,
   backgroundColor: '#333333',
   scene: { create: createSidePanel, preload: preloadSidePanel },
