@@ -616,15 +616,14 @@ function showPokedexPanel() {
 // ===== ENCOUNTER/DEX LOGIC =====
 function playerIsInGrass() {
   if (!grassGroup) return false;
-  const playerBounds = {
-    x: player.x - PLAYER_WIDTH/2,
-    y: player.y - PLAYER_HEIGHT/2,
-    width: PLAYER_WIDTH,
-    height: PLAYER_HEIGHT
-  };
   let inGrass = false;
+  const playerCenter = { x: player.x, y: player.y };
+
   grassGroup.children.iterate(grass => {
-    if (grass && Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, grass.getBounds())) {
+    if (!grass || !grass.visible) return;
+    // Use a small threshold to check if player is "standing" in the grass
+    const dist = Phaser.Math.Distance.Between(playerCenter.x, playerCenter.y, grass.x, grass.y);
+    if (dist < TILE_SIZE / 2) { // Adjust this threshold as needed
       inGrass = true;
     }
   });
