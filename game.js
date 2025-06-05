@@ -13,12 +13,15 @@ const TILE_SIZE = 64;
 let player, cursors, trees = [], rocks = [], shiftKey;
 let useFallbackPaths = false;
 
+// ===== AREA STATE (NEW) =====
+let areaX = 0, areaY = 0;
+let areaMap = {}; // To store generated area data by key "x_y"
+
 // ===== UTILITY FUNCTIONS =====
 function checkCollision(obj1, obj2) {
 return obj1.x < obj2.x + obj2.width &&
 obj1.x + obj1.width > obj2.x &&
-obj1.y < obj2.y + obj2.height &&
-obj1.y + obj1.height > obj2.y;
+obj1.y < obj2.y + obj2.height > obj2.y;
 }
 
 function findStartPosition(cols, rows, occupiedPositions) {
@@ -390,114 +393,185 @@ this.load.image('bag_hovered', 'bag_hovered.png');
 this.load.image('save_hovered', 'save_hovered.png');
 }
 
+// ===== AREA GENERATION & SWITCHING (NEW) =====
+function generateArea(scene, ax, ay, entranceDir) {
+  // Remove all objects from previous area
+  scene.children.removeAll();
+
+  trees = [];
+  rocks = [];
+
+  // Generate new area, save to areaMap (for persistence, can be expanded)
+  const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
+  const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
+  const occupiedPositions = new Set();
+
+  const grassGroup = scene.add.group();
+  const pathGroup = scene.add.group();
+  const treeGroup = scene.add.group();
+  const rockGroup = scene.add.group();
+
+  generatePath(scene, cols, rows, pathGroup, occupiedPositions);
+  generateGrass(scene, cols, rows, grassGroup, occupiedPositions);
+  generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
+  generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
+
+  // Optionally store area data for revisiting (can be expanded for persistence)
+  areaMap[`${ax}_${ay}`] = {
+    // To be filled with more info as needed
+  };
+
+  // Place player at correct entrance edge
+  switch (entranceDir) {
+    case 'left':
+      player.x = PLAYER_WIDTH/2 + 1;
+      break;
+    case 'right':
+      player.x = scene.sys.game.config.width - PLAYER_WIDTH/2 - 1;
+      break;
+    case 'up':
+      player.y = PLAYER_HEIGHT/2 + 1;
+      break;
+    case 'down':
+      player.y = scene.sys.game.config.height - PLAYER_HEIGHT/2 - 1;
+      break;
+    default:
+      // Center spawn for initial area
+      player.x = scene.sys.game.config.width/2;
+      player.y = scene.sys.game.config.height/2;
+      break;
+  }
+  player.setDepth(player.y + 20);
+}
+
+// ====== CREATE and UPDATE (MODIFIED) =====
 function create() {
-// Add background
-const bg = this.add.image(
-this.cameras.main.centerX,
-this.cameras.main.centerY,
-'background'
-);
-bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
-bg.setDepth(-1);
+  // Add background
+  const bg = this.add.image(
+    this.cameras.main.centerX,
+    this.cameras.main.centerY,
+    'background'
+  );
+  bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
+  bg.setDepth(-1);
 
-// Generate world
-const cols = Math.floor(this.sys.game.config.width / TILE_SIZE);
-const rows = Math.floor(this.sys.game.config.height / TILE_SIZE);
-const occupiedPositions = new Set();
+  // Create player sprite (not placed yet, will be positioned by generateArea)
+  player = this.add.sprite(
+    this.sys.game.config.width/2,
+    this.sys.game.config.height/2,
+    'hero'
+  );
+  player.setDepth(player.y + 20);
 
-const grassGroup = this.add.group();
-const pathGroup = this.add.group();
-const treeGroup = this.add.group();
-const rockGroup = this.add.group();
+  // Setup controls and animations
+  setupAnimations(this);
+  cursors = this.input.keyboard.createCursorKeys();
+  shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
-generatePath(this, cols, rows, pathGroup, occupiedPositions);
-generateGrass(this, cols, rows, grassGroup, occupiedPositions);
-generateTrees(this, cols, rows, treeGroup, occupiedPositions);
-generateRocks(this, cols, rows, rockGroup, occupiedPositions);
-
-// Create player
-const startPos = findStartPosition(cols, rows, occupiedPositions);
-player = this.add.sprite(
-startPos.x * TILE_SIZE + TILE_SIZE/2,
-startPos.y * TILE_SIZE + TILE_SIZE/2,
-'hero'
-);
-player.setDepth(player.y + 20);
-
-// Setup controls and animations
-setupAnimations(this);
-cursors = this.input.keyboard.createCursorKeys();
-shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+  // Generate initial area (center spawn)
+  generateArea(this, areaX, areaY);
 }
 
 function update() {
-// Movement handling
-let moving = false;
-const speed = shiftKey.isDown ? 2.5 : 1.5;
-let newX = player.x;
-let newY = player.y;
-let direction = '';
+  // Movement handling
+  let moving = false;
+  const speed = shiftKey.isDown ? 2.5 : 1.5;
+  let newX = player.x;
+  let newY = player.y;
+  let direction = '';
 
-if (cursors.left.isDown) {
-newX -= speed;
-player.anims.play('walk_left', true);
-moving = true;
-direction = 'left';
-} else if (cursors.right.isDown) {
-newX += speed;
-player.anims.play('walk_right', true);
-moving = true;
-direction = 'right';
-} else if (cursors.up.isDown) {
-newY -= speed;
-player.anims.play('walk_up', true);
-moving = true;
-direction = 'up';
-} else if (cursors.down.isDown) {
-newY += speed;
-player.anims.play('walk_down', true);
-moving = true;
-direction = 'down';
-}
+  if (cursors.left.isDown) {
+    newX -= speed;
+    player.anims.play('walk_left', true);
+    moving = true;
+    direction = 'left';
+  } else if (cursors.right.isDown) {
+    newX += speed;
+    player.anims.play('walk_right', true);
+    moving = true;
+    direction = 'right';
+  } else if (cursors.up.isDown) {
+    newY -= speed;
+    player.anims.play('walk_up', true);
+    moving = true;
+    direction = 'up';
+  } else if (cursors.down.isDown) {
+    newY += speed;
+    player.anims.play('walk_down', true);
+    moving = true;
+    direction = 'down';
+  }
 
-if (!moving) {
-if (direction === 'left') player.anims.play('idle_left', true);
-else if (direction === 'right') player.anims.play('idle_right', true);
-else if (direction === 'up') player.anims.play('idle_up', true);
-else player.anims.play('idle_down', true);
-}
-// Collision detection
-let canMove = true;
-const playerBounds = {
-x: newX - PLAYER_WIDTH/2,
-y: newY - PLAYER_HEIGHT/2,
-width: PLAYER_WIDTH,
-height: PLAYER_HEIGHT
-};
+  if (!moving) {
+    if (direction === 'left') player.anims.play('idle_left', true);
+    else if (direction === 'right') player.anims.play('idle_right', true);
+    else if (direction === 'up') player.anims.play('idle_up', true);
+    else player.anims.play('idle_down', true);
+  }
 
-for (const tree of trees) {
-if (checkCollision(playerBounds, tree)) {
-canMove = false;
-break;
-}
-}
-for (const rock of rocks) {
-if (checkCollision(playerBounds, rock)) {
-canMove = false;
-break;
-}
-}
+  // Collision detection
+  let canMove = true;
+  const playerBounds = {
+    x: newX - PLAYER_WIDTH/2,
+    y: newY - PLAYER_HEIGHT/2,
+    width: PLAYER_WIDTH,
+    height: PLAYER_HEIGHT
+  };
 
-// Apply movement
-if (canMove) {
-player.x = newX;
-player.y = newY;
-}
+  for (const tree of trees) {
+    if (checkCollision(playerBounds, tree)) {
+      canMove = false;
+      break;
+    }
+  }
+  for (const rock of rocks) {
+    if (checkCollision(playerBounds, rock)) {
+      canMove = false;
+      break;
+    }
+  }
 
-// Update depths
-player.setDepth(player.y + 20);
-trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
-rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
+  // ===== AREA EXIT DETECTION (NEW) =====
+  let exited = false;
+  let exitDir = null;
+  const w = mainConfig.width, h = mainConfig.height;
+
+  if (canMove) {
+    // Only update position if not about to exit area
+    if (newX < 0) {
+      areaX -= 1;
+      exited = true;
+      exitDir = 'right'; // coming in from right side of new area
+    } else if (newX > w) {
+      areaX += 1;
+      exited = true;
+      exitDir = 'left';
+    } else if (newY < 0) {
+      areaY -= 1;
+      exited = true;
+      exitDir = 'down';
+    } else if (newY > h) {
+      areaY += 1;
+      exited = true;
+      exitDir = 'up';
+    }
+  }
+
+  if (exited) {
+    generateArea(this, areaX, areaY, exitDir);
+    return;
+  }
+
+  // Apply movement
+  if (canMove) {
+    player.x = newX;
+    player.y = newY;
+  }
+
+  // Update depths
+  player.setDepth(player.y + 20);
+  trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
+  rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
 }
 
 // ===== GAME CONFIGURATION =====
