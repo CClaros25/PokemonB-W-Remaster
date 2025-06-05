@@ -580,38 +580,36 @@ function update() {
     }
   }
 
-  // Area transition logic
-  let exited = false, exitDir = null;
-  let previousX = player.x, previousY = player.y;
-  const w = mainConfig.width, h = mainConfig.height;
+  // SEAMLESS WRAPAROUND
+  const w = this.sys.game.config.width;
+  const h = this.sys.game.config.height;
 
   if (canMove) {
+    // LEFT EDGE
     if (newX < 0) {
-      areaX -= 1;
-      exited = true;
-      exitDir = 'right';
-    } else if (newX > w) {
-      areaX += 1;
-      exited = true;
-      exitDir = 'left';
-    } else if (newY < 0) {
-      areaY -= 1;
-      exited = true;
-      exitDir = 'down';
-    } else if (newY > h) {
-      areaY += 1;
-      exited = true;
-      exitDir = 'up';
+      player.x = w - PLAYER_WIDTH / 2 - 2;
+      player.y = newY;
+      return;
     }
-  }
-
-  if (exited) {
-    generateArea(this, areaX, areaY, exitDir, previousX, previousY);
-    return;
-  }
-
-  // Apply movement
-  if (canMove) {
+    // RIGHT EDGE
+    if (newX > w) {
+      player.x = PLAYER_WIDTH / 2 + 2;
+      player.y = newY;
+      return;
+    }
+    // TOP EDGE
+    if (newY < 0) {
+      player.y = h - PLAYER_HEIGHT / 2 - 2;
+      player.x = newX;
+      return;
+    }
+    // BOTTOM EDGE
+    if (newY > h) {
+      player.y = PLAYER_HEIGHT / 2 + 2;
+      player.x = newX;
+      return;
+    }
+    // NORMAL MOVE
     player.x = newX;
     player.y = newY;
   }
@@ -621,7 +619,6 @@ function update() {
   trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
   rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
 }
-
 // ===== GAME CONFIGURATION =====
 const mainConfig = {
   type: Phaser.AUTO,
