@@ -365,7 +365,7 @@ function getBattlePanelButtons() {
     { key: 'fight', label: 'FIGHT', onClick: () => {/* TODO: attack logic */} },
     { key: 'catch', label: 'CATCH', onClick: () => { tryCatchPokemon(); } },
     { key: 'switch', label: 'SWITCH', onClick: () => { setSidePanelMode('battle_party'); } },
-    { key: 'run', label: 'RUN', onClick: () => { endEncounterUI(); } },
+    { key: 'run', label: 'RUN', onClick: () => { endEncounterUI(); } }
   ];
 }
 
