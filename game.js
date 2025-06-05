@@ -19,12 +19,43 @@ let areaX = 0, areaY = 0;
 // ===== ENVIRONMENT GROUPS =====
 let grassGroup, pathGroup, treeGroup, rockGroup;
 
+// ===== ENCOUNTER STATE =====
+let encounterActive = false;
+let currentEncounterName = null;
+
+// ===== POKEDEX STATE (persistent) =====
+let pokedex = JSON.parse(localStorage.getItem('pokedex') || '[]');
+if (pokedex.length === 0) {
+  pokedex = ['bulbasaur', 'charmander', 'squirtle'];
+  localStorage.setItem('pokedex', JSON.stringify(pokedex));
+}
+
+// ===== SIDE PANEL STATE =====
+let sidePanelMode = "main"; // "main" or "battle"
+let sidePanelSceneRef = null;
+
+// ===== POKEMON DATA =====
+const pokemonNames = [
+  // ... FULL list of 649 Pokémon names, lowercase, hyphens for special forms, e.g.:
+  "bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise",
+  // ... etc ... (see previous messages for full array)
+  "genesect"
+];
+
 // ===== UTILITY FUNCTIONS =====
 function checkCollision(obj1, obj2) {
   return obj1.x < obj2.x + obj2.width &&
     obj1.x + obj1.width > obj2.x &&
     obj1.y < obj2.y + obj2.height &&
     obj1.y + obj1.height > obj2.y;
+}
+
+function addToDex(name) {
+  name = name.toLowerCase();
+  if (!pokedex.includes(name)) {
+    pokedex.push(name);
+    localStorage.setItem('pokedex', JSON.stringify(pokedex));
+  }
 }
 
 function findStartPosition(cols, rows, occupiedPositions) {
@@ -195,7 +226,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
 
     if (canPlaceTree && Math.random() < 0.5) {
       const treeX = patchX * TILE_SIZE + TILE_SIZE / 2;
-      const treeSpriteY = patchY * TILE_SIZE + TILE_SIZE / 2 - 20; // draw sprite at this Y
+      const treeSpriteY = patchY * TILE_SIZE + TILE_SIZE / 2 - 20;
 
       const tree = scene.add.image(treeX, treeSpriteY, 'tree');
       tree.setScale(0.7);
@@ -203,9 +234,8 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
       tree.setDepth(treeSpriteY);
       treeGroup.add(tree);
 
-      // Make tree hitbox smaller at the front
       const hitboxHeight = TREE_HEIGHT * 0.15;
-      const hitboxInset = 10; // try 10 or tweak for best feel
+      const hitboxInset = 10;
       const frontThresholdY = scene.sys.game.config.height - 120;
 
       if (treeSpriteY < frontThresholdY) {
@@ -316,8 +346,25 @@ function setupAnimations(scene) {
   });
 }
 
-// ===== SIDE PANEL =====
-function createSidePanel() {
+// ===== SIDE PANEL BUTTON CONFIGS =====
+const mainPanelButtons = [
+  { key: 'pkmn', label: 'PKMN', onClick: () => {/* TODO: party display */} },
+  { key: 'dex', label: 'DEX', onClick: () => { showPokedexPanel(); } },
+  { key: 'bag', label: 'BAG', onClick: () => {/* TODO: bag display */} },
+  { key: 'save', label: 'SAVE', onClick: () => {/* TODO: save game */} }
+];
+
+const battlePanelButtons = [
+  { key: 'fight', label: 'FIGHT', onClick: () => {/* TODO: attack logic */} },
+  { key: 'bag', label: 'BAG', onClick: () => {/* TODO: use item logic */} },
+  { key: 'run', label: 'RUN', onClick: () => { endEncounterUI(); } },
+  { key: 'catch', label: 'CATCH', onClick: () => { tryCatchPokemon(); } }
+];
+
+// ===== SIDE PANEL RENDERER =====
+function renderSidePanel(scene, buttons) {
+  scene.children.removeAll();
+
   const canvasWidth = 684;
   const canvasHeight = 378;
   const iconWidth = 487;
@@ -325,82 +372,178 @@ function createSidePanel() {
   const gap = 20;
   const cols = 2;
   const rows = 2;
-
-  const cellWidth = (canvasWidth - gap) / cols;    // 332
-  const cellHeight = (canvasHeight - gap) / rows;  // 179
-  const scale = Math.min(cellWidth / iconWidth, cellHeight / iconHeight); // ~0.68
+  const cellWidth = (canvasWidth - gap) / cols;
+  const cellHeight = (canvasHeight - gap) / rows;
+  const scale = Math.min(cellWidth / iconWidth, cellHeight / iconHeight);
 
   const startX = 0;
   const startY = 0;
-  const grid = [
-    { key: 'pkmn', col: 0, row: 0 },
-    { key: 'dex', col: 1, row: 0 },
-    { key: 'bag', col: 0, row: 1 },
-    { key: 'save', col: 1, row: 1 }
-  ];
+  buttons.forEach((btn, i) => {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const x = startX + col * (cellWidth + gap);
+    const y = startY + row * (cellHeight + gap);
 
-  grid.forEach(item => {
-    const x = startX + item.col * (cellWidth + gap);
-    const y = startY + item.row * (cellHeight + gap);
-    const icon = this.add.image(x, y, `${item.key}_unhovered`)
-      .setOrigin(0, 0)
-      .setScale(scale)
-      .setInteractive();
-
-    icon.on('pointerover', () => {
-      icon.setTexture(`${item.key}_hovered`);
-    });
-    icon.on('pointerout', () => {
-      icon.setTexture(`${item.key}_unhovered`);
-    });
+    let icon;
+    if (sidePanelMode === "main") {
+      icon = scene.add.image(x, y, `${btn.key}_unhovered`)
+        .setOrigin(0, 0)
+        .setScale(scale)
+        .setInteractive();
+      icon.on('pointerover', () => icon.setTexture(`${btn.key}_hovered`));
+      icon.on('pointerout', () => icon.setTexture(`${btn.key}_unhovered`));
+      icon.on('pointerdown', btn.onClick);
+    } else {
+      icon = scene.add.text(x + 60, y + 50, btn.label, { fontFamily: "monospace", fontSize: "40px", fill: "#fff", backgroundColor: "#444", padding: { x: 12, y: 4 } })
+        .setInteractive()
+        .on('pointerdown', btn.onClick);
+    }
   });
 }
 
-// ===== CORE GAME SCENES =====
-function preload() {
-  console.log("Loading game assets...");
-
-  this.load.image('background', 'background.png')
-    .on('loaderror', () => console.error("Failed to load background"));
-
-  this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml')
-    .on('loaderror', () => console.error("Failed to load hero spritesheet"));
-
-  this.load.image('grass', 'grass.png');
-  this.load.image('tree', 'tree.png');
-  this.load.image('rock1', 'rock1.png');
-  this.load.image('rock2', 'rock2.png');
-
-  this.load.image('main-path', 'main-path.png')
-    .on('loaderror', () => {
-      useFallbackPaths = true;
-      console.log("Using fallback paths");
-    });
-  this.load.image('corner-path', 'corner-path.png')
-    .on('loaderror', () => {
-      useFallbackPaths = true;
-      console.log("Using fallback paths");
-    });
-
-  this.load.on('complete', () => {
-    console.log("All assets loaded successfully!");
-  });
+// ===== SIDE PANEL SCENE =====
+function createSidePanel() {
+  sidePanelSceneRef = this;
+  renderSidePanel(this, mainPanelButtons);
 }
 
-function preloadSidePanel() {
-  this.load.image('pkmn_unhovered', 'pkmn_unhovered.png');
-  this.load.image('dex_unhovered', 'dex_unhovered.png');
-  this.load.image('bag_unhovered', 'bag_unhovered.png');
-  this.load.image('save_unhovered', 'save_unhovered.png');
-  this.load.image('pkmn_hovered', 'pkmn_hovered.png');
-  this.load.image('dex_hovered', 'dex_hovered.png');
-  this.load.image('bag_hovered', 'bag_hovered.png');
-  this.load.image('save_hovered', 'save_hovered.png');
+// ===== SWITCH SIDE PANEL MODES =====
+function setSidePanelMode(mode) {
+  sidePanelMode = mode;
+  if (sidePanelSceneRef) {
+    if (mode === "main") {
+      renderSidePanel(sidePanelSceneRef, mainPanelButtons);
+    } else if (mode === "battle") {
+      renderSidePanel(sidePanelSceneRef, battlePanelButtons);
+    }
+  }
+}
+
+// ===== ENCOUNTER/DEX LOGIC =====
+function playerIsInGrass() {
+  if (!grassGroup) return false;
+  const playerBounds = {
+    x: player.x - PLAYER_WIDTH/2,
+    y: player.y - PLAYER_HEIGHT/2,
+    width: PLAYER_WIDTH,
+    height: PLAYER_HEIGHT
+  };
+  let inGrass = false;
+  grassGroup.children.iterate(grass => {
+    if (grass && Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, grass.getBounds())) {
+      inGrass = true;
+    }
+  });
+  return inGrass;
+}
+
+function tryEncounter(scene) {
+  if (!playerIsInGrass() || encounterActive) return;
+  if (Phaser.Math.Between(1, 300) === 1) {
+    startEncounter(scene);
+  }
+}
+
+function startEncounter(scene) {
+  encounterActive = true;
+  setSidePanelMode("battle");
+
+  // Pick a random Pokémon
+  const pokeIndex = Phaser.Math.Between(0, pokemonNames.length - 1);
+  const pokeName = pokemonNames[pokeIndex];
+  currentEncounterName = pokeName;
+
+  // Clean up any old encounter UI
+  if (scene.encounterUI) {
+    scene.encounterUI.destroy(true);
+  }
+
+  // Overlay rectangle for battle "screen"
+  const ui = scene.add.container();
+  const rect = scene.add.rectangle(scene.sys.game.config.width/2, scene.sys.game.config.height/2, 640, 350, 0x222222, 0.97);
+  rect.setStrokeStyle(4, 0xffffff);
+  ui.add(rect);
+
+  // pokemondb.net URLs for Gen 5 animated sprites
+  const frontURL = `https://img.pokemondb.net/sprites/black-white/anim/normal/${pokeName}.gif`;
+  const backURL = `https://img.pokemondb.net/sprites/black-white/anim/back-normal/${pokeName}.gif`;
+
+  scene.load.image(`encounter-front`, frontURL);
+  scene.load.image(`encounter-back`, backURL);
+
+  scene.load.once("complete", () => {
+    // Player's Pokémon (bottom left, back)
+    const back = scene.add.image(170, 600, "encounter-back").setScale(2.7).setOrigin(0.5, 1);
+    // Wild Pokémon (top right, front)
+    const front = scene.add.image(580, 220, "encounter-front").setScale(2.7).setOrigin(0.5, 1);
+
+    ui.add(back);
+    ui.add(front);
+
+    // Text
+    const style = { fontFamily: "monospace", fontSize: "22px", fill: "#fff" };
+    const label = scene.add.text(120, 420, `A wild ${pokeName.charAt(0).toUpperCase() + pokeName.slice(1)} appeared!`, style);
+    ui.add(label);
+
+    // Store UI and label for catch logic
+    scene.encounterUI = ui;
+    scene.encounterLabel = label;
+  });
+  scene.load.start();
+}
+
+function endEncounterUI() {
+  setSidePanelMode("main");
+  encounterActive = false;
+  currentEncounterName = null;
+  if (sidePanelSceneRef && sidePanelSceneRef.encounterUI) {
+    sidePanelSceneRef.encounterUI.destroy(true);
+    sidePanelSceneRef.encounterUI = null;
+  }
+}
+
+function tryCatchPokemon() {
+  if (!currentEncounterName || !sidePanelSceneRef || !sidePanelSceneRef.encounterLabel) return;
+
+  let label = sidePanelSceneRef.encounterLabel;
+  if (Math.random() < 0.5) {
+    addToDex(currentEncounterName);
+    label.setText(`Gotcha! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} was caught!`);
+    setTimeout(() => {
+      if (sidePanelSceneRef.encounterUI) sidePanelSceneRef.encounterUI.destroy(true);
+      endEncounterUI();
+    }, 1200);
+  } else {
+    label.setText(`Oh no! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} broke free!`);
+  }
+}
+
+// ===== POKEDEX PANEL =====
+function showPokedexPanel() {
+  if (window.dexPanel) return;
+  const scene = sidePanelSceneRef.scene.scene;
+  const panel = scene.add.container();
+  const bg = scene.add.rectangle(384, 384, 650, 700, 0x111111, 0.97);
+  panel.add(bg);
+
+  panel.add(scene.add.text(220, 80, "Pokédex", { fontFamily: "monospace", fontSize: "48px", fill: "#fff" }));
+  pokedex.forEach((name, i) => {
+    panel.add(scene.add.text(200, 150 + i * 32, `${i + 1}. ${name.charAt(0).toUpperCase() + name.slice(1)}`, { fontFamily: "monospace", fontSize: "28px", fill: "#fff" }));
+  });
+
+  function escClose(e) {
+    if (e.key === 'Escape') {
+      panel.destroy(true);
+      window.dexPanel = null;
+      window.removeEventListener('keydown', escClose);
+    }
+  }
+  window.addEventListener('keydown', escClose);
+  window.dexPanel = panel;
 }
 
 // ===== AREA GENERATION & SWITCHING =====
 function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
-  // Clear environment objects only
   if (grassGroup) grassGroup.clear(true, true);
   if (pathGroup) pathGroup.clear(true, true);
   if (treeGroup) treeGroup.clear(true, true);
@@ -408,7 +551,6 @@ function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
   trees = [];
   rocks = [];
 
-  // Generate new area
   const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
   const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
   const occupiedPositions = new Set();
@@ -418,21 +560,20 @@ function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
   generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
   generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
 
-  // Place player at correct edge based on entranceDir
   switch (entranceDir) {
-    case 'left': // walked off left, enter at right edge of new area
+    case 'left':
       player.x = scene.sys.game.config.width - PLAYER_WIDTH / 2 - 2;
       player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
       break;
-    case 'right': // walked off right, enter at left edge of new area
+    case 'right':
       player.x = PLAYER_WIDTH / 2 + 2;
       player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
       break;
-    case 'up': // walked off top, enter at bottom edge of new area
+    case 'up':
       player.y = scene.sys.game.config.height - PLAYER_HEIGHT / 2 - 2;
       player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
       break;
-    case 'down': // walked off bottom, enter at top edge of new area
+    case 'down':
       player.y = PLAYER_HEIGHT / 2 + 2;
       player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
       break;
@@ -446,7 +587,6 @@ function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
 
 // ===== CREATE =====
 function create() {
-  // Add background
   const bg = this.add.image(
     this.cameras.main.centerX,
     this.cameras.main.centerY,
@@ -455,13 +595,11 @@ function create() {
   bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
   bg.setDepth(-1);
 
-  // Create groups for environment
   grassGroup = this.add.group();
   pathGroup = this.add.group();
   treeGroup = this.add.group();
   rockGroup = this.add.group();
 
-  // Create player (not placed yet)
   player = this.add.sprite(
     this.sys.game.config.width/2,
     this.sys.game.config.height/2,
@@ -469,17 +607,22 @@ function create() {
   );
   player.setDepth(player.y + 20);
 
-  // Setup controls and animations
   setupAnimations(this);
   cursors = this.input.keyboard.createCursorKeys();
   shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
-  // Generate initial area
   generateArea(this, areaX, areaY);
+
+  if (pokedex.length === 0) {
+    pokedex = ['bulbasaur', 'charmander', 'squirtle'];
+    localStorage.setItem('pokedex', JSON.stringify(pokedex));
+  }
 }
 
 // ===== UPDATE =====
 function update() {
+  if (encounterActive) return;
+
   let moving = false;
   const speed = shiftKey.isDown ? 2.5 : 1.5;
   let newX = player.x;
@@ -515,7 +658,6 @@ function update() {
     else player.anims.play('idle_down', true);
   }
 
-  // Collision detection
   let canMove = true;
   const playerBounds = {
     x: newX - PLAYER_WIDTH/2,
@@ -537,7 +679,6 @@ function update() {
     }
   }
 
-  // Area transition logic
   let exited = false, exitDir = null;
   let previousX = player.x, previousY = player.y;
   const w = mainConfig.width, h = mainConfig.height;
@@ -567,13 +708,12 @@ function update() {
     return;
   }
 
-  // Apply movement
   if (canMove) {
     player.x = newX;
     player.y = newY;
+    tryEncounter(this);
   }
 
-  // Update depths
   player.setDepth(player.y + 20);
   trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
   rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
@@ -620,4 +760,46 @@ try {
   else console.log("Both game instances initialized successfully!");
 } catch (error) {
   console.error("Game initialization failed:", error);
+}
+
+// ===== PRELOADS =====
+function preload() {
+  console.log("Loading game assets...");
+
+  this.load.image('background', 'background.png')
+    .on('loaderror', () => console.error("Failed to load background"));
+
+  this.load.atlasXML('hero', 'sCrkzvs.png', 'sCrkzvs.xml')
+    .on('loaderror', () => console.error("Failed to load hero spritesheet"));
+
+  this.load.image('grass', 'grass.png');
+  this.load.image('tree', 'tree.png');
+  this.load.image('rock1', 'rock1.png');
+  this.load.image('rock2', 'rock2.png');
+
+  this.load.image('main-path', 'main-path.png')
+    .on('loaderror', () => {
+      useFallbackPaths = true;
+      console.log("Using fallback paths");
+    });
+  this.load.image('corner-path', 'corner-path.png')
+    .on('loaderror', () => {
+      useFallbackPaths = true;
+      console.log("Using fallback paths");
+    });
+
+  this.load.on('complete', () => {
+    console.log("All assets loaded successfully!");
+  });
+}
+
+function preloadSidePanel() {
+  this.load.image('pkmn_unhovered', 'pkmn_unhovered.png');
+  this.load.image('dex_unhovered', 'dex_unhovered.png');
+  this.load.image('bag_unhovered', 'bag_unhovered.png');
+  this.load.image('save_unhovered', 'save_unhovered.png');
+  this.load.image('pkmn_hovered', 'pkmn_hovered.png');
+  this.load.image('dex_hovered', 'dex_hovered.png');
+  this.load.image('bag_hovered', 'bag_hovered.png');
+  this.load.image('save_hovered', 'save_hovered.png');
 }
