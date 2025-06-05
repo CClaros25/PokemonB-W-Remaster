@@ -398,7 +398,7 @@ function preloadSidePanel() {
 }
 
 // ===== AREA GENERATION & SWITCHING =====
-function generateArea(scene, ax, ay, entranceDir) {
+function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
   // Save current player position before leaving area
   const prevKey = `${areaX}_${areaY}`;
   if (areaMap[prevKey]) {
@@ -421,7 +421,6 @@ function generateArea(scene, ax, ay, entranceDir) {
 
   // Generate new area if not already stored
   if (!storedArea) {
-    // Generate environment
     const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
     const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
     const occupiedPositions = new Set();
@@ -439,7 +438,7 @@ function generateArea(scene, ax, ay, entranceDir) {
     storedArea = {};
     areaMap[key] = storedArea;
   } else {
-    // For procedural only, just regenerate as above, but you could restore persistent environment here
+    // For procedural, just regenerate as above
     const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
     const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
     const occupiedPositions = new Set();
@@ -457,30 +456,28 @@ function generateArea(scene, ax, ay, entranceDir) {
 
   // Set player position
   if (storedArea.playerX !== undefined && storedArea.playerY !== undefined) {
-    // Restore last position in this area
     player.x = storedArea.playerX;
     player.y = storedArea.playerY;
   } else {
-    // First time in this area: spawn at entrance edge
+    // Place player at correct edge based on entranceDir, preserving their coordinate along the edge
     switch (entranceDir) {
-      case 'left':
-        player.x = PLAYER_WIDTH / 2 + 1;
-        player.y = scene.sys.game.config.height / 2;
+      case 'left': // coming from left, appear at right edge
+        player.x = scene.sys.game.config.width - PLAYER_WIDTH / 2 - 2;
+        player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
         break;
-      case 'right':
-        player.x = scene.sys.game.config.width - PLAYER_WIDTH / 2 - 1;
-        player.y = scene.sys.game.config.height / 2;
+      case 'right': // coming from right, appear at left edge
+        player.x = PLAYER_WIDTH / 2 + 2;
+        player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
         break;
-      case 'up':
-        player.y = PLAYER_HEIGHT / 2 + 1;
-        player.x = scene.sys.game.config.width / 2;
+      case 'up': // coming from top, appear at bottom
+        player.y = scene.sys.game.config.height - PLAYER_HEIGHT / 2 - 2;
+        player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
         break;
-      case 'down':
-        player.y = scene.sys.game.config.height - PLAYER_HEIGHT / 2 - 1;
-        player.x = scene.sys.game.config.width / 2;
+      case 'down': // coming from bottom, appear at top
+        player.y = PLAYER_HEIGHT / 2 + 2;
+        player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
         break;
       default:
-        // Center spawn for initial area
         player.x = scene.sys.game.config.width / 2;
         player.y = scene.sys.game.config.height / 2;
         break;
