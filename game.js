@@ -446,7 +446,7 @@ function showSlotOptions(scene, slotIdx, mode="party") {
   let name = party[slotIdx];
   if (!name) return;
   slotOptionsPanel = scene.add.container();
-  let bg = scene.add.rectangle(320, 180, 200, 140, 0x333333, 0.98);
+  let bg = scene.add.rectangle(320, 180, 200, 180, 0x333333, 0.98);
   slotOptionsPanel.add(bg);
 
   let y = 110;
@@ -479,10 +479,22 @@ function showSlotOptions(scene, slotIdx, mode="party") {
         slotOptionsPanel.destroy(true);
         slotOptionsPanel = null;
       })
-  );
+  ); y+=30;
+  // Remove
+  slotOptionsPanel.add(
+    scene.add.text(250, y, "[Remove]", { fontFamily: "monospace", fontSize: "22px", fill: "#f55" })
+      .setInteractive()
+      .on('pointerdown', () => {
+        party.splice(slotIdx, 1);
+        localStorage.setItem('party', JSON.stringify(party));
+        setSidePanelMode(mode);
+        slotOptionsPanel.destroy(true);
+        slotOptionsPanel = null;
+      })
+  ); y+=30;
   // Cancel
   slotOptionsPanel.add(
-    scene.add.text(250, y+30, "[Cancel]", { fontFamily: "monospace", fontSize: "20px", fill: "#aaa" })
+    scene.add.text(250, y, "[Cancel]", { fontFamily: "monospace", fontSize: "20px", fill: "#aaa" })
       .setInteractive()
       .on('pointerdown', () => {
         slotOptionsPanel.destroy(true);
