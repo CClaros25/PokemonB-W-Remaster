@@ -526,7 +526,6 @@ function create() {
 
 // ===== UPDATE =====
 function update() {
-  // Movement handling
   let moving = false;
   const speed = shiftKey.isDown ? 2.5 : 1.5;
   let newX = player.x;
@@ -584,16 +583,17 @@ function update() {
     }
   }
 
-  // AREA EXIT DETECTION
-  let exited = false;
-  let exitDir = null;
+  // ===== EDGE TRANSITION =====
+  let exited = false, exitDir = null;
+  let previousX = player.x;
+  let previousY = player.y;
   const w = mainConfig.width, h = mainConfig.height;
 
   if (canMove) {
     if (newX < 0) {
       areaX -= 1;
       exited = true;
-      exitDir = 'right'; // coming in from right side of new area
+      exitDir = 'right';
     } else if (newX > w) {
       areaX += 1;
       exited = true;
@@ -610,7 +610,7 @@ function update() {
   }
 
   if (exited) {
-    generateArea(this, areaX, areaY, exitDir);
+    generateArea(this, areaX, areaY, exitDir, previousX, previousY);
     return;
   }
 
