@@ -15,7 +15,7 @@ let useFallbackPaths = false;
 
 // ===== AREA STATE =====
 let areaX = 0, areaY = 0;
-let areaMap = {}; // Stores per-area player position and (optionally) environment
+let areaMap = {}; // Stores per-area player position
 
 // ===== ENVIRONMENT GROUPS =====
 let grassGroup, pathGroup, treeGroup, rockGroup;
@@ -491,7 +491,7 @@ function generateArea(scene, ax, ay, entranceDir) {
 
 // ===== CREATE =====
 function create() {
-  // Add background
+  // Add background (never destroy this!)
   bg = this.add.image(
     this.cameras.main.centerX,
     this.cameras.main.centerY,
@@ -500,11 +500,12 @@ function create() {
   bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
   bg.setDepth(-1);
 
-  // Create player sprite (not placed yet, will be positioned by generateArea)
+  // Create player sprite (use correct frame and atlas key, never destroy this!)
   player = this.add.sprite(
     this.sys.game.config.width/2,
     this.sys.game.config.height/2,
-    'hero'
+    'hero', // <-- Use 'hero' as the key, not the PNG
+    'walk_down_1'
   );
   player.setDepth(player.y + 20);
 
