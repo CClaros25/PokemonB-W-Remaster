@@ -15,11 +15,9 @@ let useFallbackPaths = false;
 
 // ===== AREA STATE =====
 let areaX = 0, areaY = 0;
-let areaMap = {}; // Stores per-area player position
 
 // ===== ENVIRONMENT GROUPS =====
 let grassGroup, pathGroup, treeGroup, rockGroup;
-let bg; // background image
 
 // ===== UTILITY FUNCTIONS =====
 function checkCollision(obj1, obj2) {
@@ -92,6 +90,7 @@ function generatePath(scene, cols, rows, pathGroup, occupiedPositions) {
 
     pathTile.setDepth(0);
     pathGroup.add(pathTile);
+
     if (Phaser.Math.Between(0, 100) < 30 && i > 2) {
       const possibleDirs = dirX === 0 ?
         [{x: 1, y: 0}, {x: -1, y: 0}] :
@@ -196,7 +195,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
 
     if (canPlaceTree && Math.random() < 0.5) {
       const treeX = patchX * TILE_SIZE + TILE_SIZE / 2;
-      const treeSpriteY = patchY * TILE_SIZE + TILE_SIZE / 2 - 20;
+      const treeSpriteY = patchY * TILE_SIZE + TILE_SIZE / 2 - 20; // draw sprite at this Y
 
       const tree = scene.add.image(treeX, treeSpriteY, 'tree');
       tree.setScale(0.7);
@@ -204,13 +203,14 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
       tree.setDepth(treeSpriteY);
       treeGroup.add(tree);
 
+      // Make tree hitbox smaller at the front
       const hitboxHeight = TREE_HEIGHT * 0.15;
+      const hitboxInset = 10; // try 10 or tweak for best feel
       const frontThresholdY = scene.sys.game.config.height - 120;
 
       if (treeSpriteY < frontThresholdY) {
-      const hitboxInset = 10; // how much to trim from the front of the box
-      trees.push({
-        sprite: tree,
+        trees.push({
+          sprite: tree,
           x: treeX - TREE_WIDTH / 2,
           y: treeSpriteY - hitboxHeight - hitboxInset,
           width: TREE_WIDTH,
@@ -292,7 +292,7 @@ function setupAnimations(scene) {
   ];
 
   anims.forEach(anim => {
-    scene.anims.{
+    scene.anims.create({
       key: anim.key,
       frames: anim.frames.map(f => ({ key: 'hero', frame: f })),
       frameRate: 10,
@@ -308,7 +308,7 @@ function setupAnimations(scene) {
   ];
 
   idleAnims.forEach(anim => {
-    scene.anims.{
+    scene.anims.create({
       key: anim.key,
       frames: [{ key: 'hero', frame: anim.frame }],
       frameRate: 1
@@ -326,9 +326,9 @@ function createSidePanel() {
   const cols = 2;
   const rows = 2;
 
-  const cellWidth = (canvasWidth - gap) / cols;
-  const cellHeight = (canvasHeight - gap) / rows;
-  const scale = Math.min(cellWidth / iconWidth, cellHeight / iconHeight);
+  const cellWidth = (canvasWidth - gap) / cols;    // 332
+  const cellHeight = (canvasHeight - gap) / rows;  // 179
+  const scale = Math.min(cellWidth / iconWidth, cellHeight / iconHeight); // ~0.68
 
   const startX = 0;
   const startY = 0;
@@ -400,15 +400,6 @@ function preloadSidePanel() {
 
 // ===== AREA GENERATION & SWITCHING =====
 function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
-  // Save current player position before leaving area
-  const prevKey = `${areaX}_${areaY}`;
-  if (areaMap[prevKey]) {
-    areaMap[prevKey].playerX = player.x;
-    areaMap[prevKey].playerY = player.y;
-  } else if (player) {
-    areaMap[prevKey] = { playerX: player.x, playerY: player.y };
-  }
-
   // Clear environment objects only
   if (grassGroup) grassGroup.clear(true, true);
   if (pathGroup) pathGroup.clear(true, true);
@@ -417,72 +408,38 @@ function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
   trees = [];
   rocks = [];
 
-  const key = `${ax}_${ay}`;
-  let storedArea = areaMap[key];
+  // Generate new area
+  const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
+  const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
+  const occupiedPositions = new Set();
 
-  // Generate new area if not already stored
-  if (!storedArea) {
-    const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
-    const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
-    const occupiedPositions = new Set();
+  generatePath(scene, cols, rows, pathGroup, occupiedPositions);
+  generateGrass(scene, cols, rows, grassGroup, occupiedPositions);
+  generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
+  generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
 
-    grassGroup = scene.add.group();
-    pathGroup = scene.add.group();
-    treeGroup = scene.add.group();
-    rockGroup = scene.add.group();
-
-    generatePath(scene, cols, rows, pathGroup, occupiedPositions);
-    generateGrass(scene, cols, rows, grassGroup, occupiedPositions);
-    generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
-    generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
-
-    storedArea = {};
-    areaMap[key] = storedArea;
-  } else {
-    // For procedural, just regenerate as above
-    const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
-    const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
-    const occupiedPositions = new Set();
-
-    grassGroup = scene.add.group();
-    pathGroup = scene.add.group();
-    treeGroup = scene.add.group();
-    rockGroup = scene.add.group();
-
-    generatePath(scene, cols, rows, pathGroup, occupiedPositions);
-    generateGrass(scene, cols, rows, grassGroup, occupiedPositions);
-    generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
-    generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
-  }
-
-  // Set player position
-  if (storedArea.playerX !== undefined && storedArea.playerY !== undefined) {
-    player.x = storedArea.playerX;
-    player.y = storedArea.playerY;
-  } else {
-    // Place player at correct edge based on entranceDir, preserving their coordinate along the edge
-    switch (entranceDir) {
-      case 'left': // coming from left, appear at right edge
-        player.x = scene.sys.game.config.width - PLAYER_WIDTH / 2 - 2;
-        player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
-        break;
-      case 'right': // coming from right, appear at left edge
-        player.x = PLAYER_WIDTH / 2 + 2;
-        player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
-        break;
-      case 'up': // coming from top, appear at bottom
-        player.y = scene.sys.game.config.height - PLAYER_HEIGHT / 2 - 2;
-        player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
-        break;
-      case 'down': // coming from bottom, appear at top
-        player.y = PLAYER_HEIGHT / 2 + 2;
-        player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
-        break;
-      default:
-        player.x = scene.sys.game.config.width / 2;
-        player.y = scene.sys.game.config.height / 2;
-        break;
-    }
+  // Place player at correct edge based on entranceDir
+  switch (entranceDir) {
+    case 'left': // walked off left, enter at right edge of new area
+      player.x = scene.sys.game.config.width - PLAYER_WIDTH / 2 - 2;
+      player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
+      break;
+    case 'right': // walked off right, enter at left edge of new area
+      player.x = PLAYER_WIDTH / 2 + 2;
+      player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
+      break;
+    case 'up': // walked off top, enter at bottom edge of new area
+      player.y = scene.sys.game.config.height - PLAYER_HEIGHT / 2 - 2;
+      player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
+      break;
+    case 'down': // walked off bottom, enter at top edge of new area
+      player.y = PLAYER_HEIGHT / 2 + 2;
+      player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
+      break;
+    default:
+      player.x = scene.sys.game.config.width / 2;
+      player.y = scene.sys.game.config.height / 2;
+      break;
   }
   player.setDepth(player.y + 20);
 }
@@ -504,11 +461,6 @@ function create() {
   treeGroup = this.add.group();
   rockGroup = this.add.group();
 
-  // Setup controls and animations
-  setupAnimations(this);
-  cursors = this.input.keyboard.createCursorKeys();
-  shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-
   // Create player (not placed yet)
   player = this.add.sprite(
     this.sys.game.config.width/2,
@@ -516,6 +468,11 @@ function create() {
     'hero'
   );
   player.setDepth(player.y + 20);
+
+  // Setup controls and animations
+  setupAnimations(this);
+  cursors = this.input.keyboard.createCursorKeys();
+  shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
   // Generate initial area
   generateArea(this, areaX, areaY);
@@ -580,36 +537,38 @@ function update() {
     }
   }
 
-  // SEAMLESS WRAPAROUND
-  const w = this.sys.game.config.width;
-  const h = this.sys.game.config.height;
+  // Area transition logic
+  let exited = false, exitDir = null;
+  let previousX = player.x, previousY = player.y;
+  const w = mainConfig.width, h = mainConfig.height;
 
   if (canMove) {
-    // LEFT EDGE
     if (newX < 0) {
-      player.x = w - PLAYER_WIDTH / 2 - 2;
-      player.y = newY;
-      return;
+      areaX -= 1;
+      exited = true;
+      exitDir = 'right';
+    } else if (newX > w) {
+      areaX += 1;
+      exited = true;
+      exitDir = 'left';
+    } else if (newY < 0) {
+      areaY -= 1;
+      exited = true;
+      exitDir = 'down';
+    } else if (newY > h) {
+      areaY += 1;
+      exited = true;
+      exitDir = 'up';
     }
-    // RIGHT EDGE
-    if (newX > w) {
-      player.x = PLAYER_WIDTH / 2 + 2;
-      player.y = newY;
-      return;
-    }
-    // TOP EDGE
-    if (newY < 0) {
-      player.y = h - PLAYER_HEIGHT / 2 - 2;
-      player.x = newX;
-      return;
-    }
-    // BOTTOM EDGE
-    if (newY > h) {
-      player.y = PLAYER_HEIGHT / 2 + 2;
-      player.x = newX;
-      return;
-    }
-    // NORMAL MOVE
+  }
+
+  if (exited) {
+    generateArea(this, areaX, areaY, exitDir, previousX, previousY);
+    return;
+  }
+
+  // Apply movement
+  if (canMove) {
     player.x = newX;
     player.y = newY;
   }
@@ -619,6 +578,7 @@ function update() {
   trees.forEach(tree => tree.sprite.setDepth(tree.sprite.y));
   rocks.forEach(rock => rock.sprite.setDepth(rock.sprite.y));
 }
+
 // ===== GAME CONFIGURATION =====
 const mainConfig = {
   type: Phaser.AUTO,
