@@ -76,6 +76,7 @@ function movePartySlot(fromIdx, toIdx) {
 function switchPartyPokemon(idx, name) {
   if (idx < 0 || idx >= MAX_PARTY_SIZE) return;
   if (!pokedex.includes(name)) return;
+  if (party.includes(name) && party[idx] !== name) return;
   party[idx] = name;
   localStorage.setItem('party', JSON.stringify(party));
 }
