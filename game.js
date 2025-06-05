@@ -208,12 +208,13 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
       const frontThresholdY = scene.sys.game.config.height - 120;
 
       if (treeSpriteY < frontThresholdY) {
-        trees.push({
-          sprite: tree,
+      const hitboxInset = 15; // how much to trim from the front of the box
+      trees.push({
+        sprite: tree,
           x: treeX - TREE_WIDTH / 2,
-          y: treeSpriteY - hitboxHeight,
+          y: treeSpriteY - hitboxHeight - hitboxInset,
           width: TREE_WIDTH,
-          height: hitboxHeight
+          height: hitboxHeight - hitboxInset
         });
       }
       for (let dx = -1; dx <= 1; dx++) {
