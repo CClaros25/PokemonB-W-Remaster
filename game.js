@@ -694,6 +694,7 @@ function endEncounterUI() {
 function tryCatchPokemon() {
   if (!currentEncounterName || !sidePanelSceneRef || !sidePanelSceneRef.encounterLabel) return;
   let label = sidePanelSceneRef.encounterLabel;
+  // Infinite pokeballs: always allow catch attempt, no item decrement needed
   if (Math.random() < 0.5) {
     addToDex(currentEncounterName);
     addToParty(currentEncounterName);
