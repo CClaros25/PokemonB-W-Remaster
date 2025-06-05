@@ -208,7 +208,7 @@ function generateTrees(scene, cols, rows, treeGroup, occupiedPositions) {
       const frontThresholdY = scene.sys.game.config.height - 120;
 
       if (treeSpriteY < frontThresholdY) {
-      const hitboxInset = 15; // how much to trim from the front of the box
+      const hitboxInset = 10; // how much to trim from the front of the box
       trees.push({
         sprite: tree,
           x: treeX - TREE_WIDTH / 2,
@@ -292,7 +292,7 @@ function setupAnimations(scene) {
   ];
 
   anims.forEach(anim => {
-    scene.anims.create({
+    scene.anims.{
       key: anim.key,
       frames: anim.frames.map(f => ({ key: 'hero', frame: f })),
       frameRate: 10,
@@ -308,7 +308,7 @@ function setupAnimations(scene) {
   ];
 
   idleAnims.forEach(anim => {
-    scene.anims.create({
+    scene.anims.{
       key: anim.key,
       frames: [{ key: 'hero', frame: anim.frame }],
       frameRate: 1
@@ -400,15 +400,6 @@ function preloadSidePanel() {
 
 // ===== AREA GENERATION & SWITCHING =====
 function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
-  // Save current player position before leaving area
-  const prevKey = `${areaX}_${areaY}`;
-  if (areaMap[prevKey]) {
-    areaMap[prevKey].playerX = player.x;
-    areaMap[prevKey].playerY = player.y;
-  } else if (player) {
-    areaMap[prevKey] = { playerX: player.x, playerY: player.y };
-  }
-
   // Clear environment objects only
   if (grassGroup) grassGroup.clear(true, true);
   if (pathGroup) pathGroup.clear(true, true);
@@ -417,80 +408,46 @@ function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
   trees = [];
   rocks = [];
 
-  const key = `${ax}_${ay}`;
-  let storedArea = areaMap[key];
+  // Generate new area
+  const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
+  const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
+  const occupiedPositions = new Set();
 
-  // Generate new area if not already stored
-  if (!storedArea) {
-    const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
-    const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
-    const occupiedPositions = new Set();
+  generatePath(scene, cols, rows, pathGroup, occupiedPositions);
+  generateGrass(scene, cols, rows, grassGroup, occupiedPositions);
+  generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
+  generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
 
-    grassGroup = scene.add.group();
-    pathGroup = scene.add.group();
-    treeGroup = scene.add.group();
-    rockGroup = scene.add.group();
-
-    generatePath(scene, cols, rows, pathGroup, occupiedPositions);
-    generateGrass(scene, cols, rows, grassGroup, occupiedPositions);
-    generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
-    generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
-
-    storedArea = {};
-    areaMap[key] = storedArea;
-  } else {
-    // For procedural, just regenerate as above
-    const cols = Math.floor(scene.sys.game.config.width / TILE_SIZE);
-    const rows = Math.floor(scene.sys.game.config.height / TILE_SIZE);
-    const occupiedPositions = new Set();
-
-    grassGroup = scene.add.group();
-    pathGroup = scene.add.group();
-    treeGroup = scene.add.group();
-    rockGroup = scene.add.group();
-
-    generatePath(scene, cols, rows, pathGroup, occupiedPositions);
-    generateGrass(scene, cols, rows, grassGroup, occupiedPositions);
-    generateTrees(scene, cols, rows, treeGroup, occupiedPositions);
-    generateRocks(scene, cols, rows, rockGroup, occupiedPositions);
-  }
-
-  // Set player position
-  if (storedArea.playerX !== undefined && storedArea.playerY !== undefined) {
-    player.x = storedArea.playerX;
-    player.y = storedArea.playerY;
-  } else {
-    // Place player at correct edge based on entranceDir, preserving their coordinate along the edge
-    switch (entranceDir) {
-      case 'left': // coming from left, appear at right edge
-        player.x = scene.sys.game.config.width - PLAYER_WIDTH / 2 - 2;
-        player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
-        break;
-      case 'right': // coming from right, appear at left edge
-        player.x = PLAYER_WIDTH / 2 + 2;
-        player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
-        break;
-      case 'up': // coming from top, appear at bottom
-        player.y = scene.sys.game.config.height - PLAYER_HEIGHT / 2 - 2;
-        player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
-        break;
-      case 'down': // coming from bottom, appear at top
-        player.y = PLAYER_HEIGHT / 2 + 2;
-        player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
-        break;
-      default:
-        player.x = scene.sys.game.config.width / 2;
-        player.y = scene.sys.game.config.height / 2;
-        break;
-    }
+  // Place player at correct edge based on entranceDir
+  switch (entranceDir) {
+    case 'left': // walked off left, enter at right edge of new area
+      player.x = scene.sys.game.config.width - PLAYER_WIDTH / 2 - 2;
+      player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
+      break;
+    case 'right': // walked off right, enter at left edge of new area
+      player.x = PLAYER_WIDTH / 2 + 2;
+      player.y = previousY !== undefined ? previousY : scene.sys.game.config.height / 2;
+      break;
+    case 'up': // walked off top, enter at bottom edge of new area
+      player.y = scene.sys.game.config.height - PLAYER_HEIGHT / 2 - 2;
+      player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
+      break;
+    case 'down': // walked off bottom, enter at top edge of new area
+      player.y = PLAYER_HEIGHT / 2 + 2;
+      player.x = previousX !== undefined ? previousX : scene.sys.game.config.width / 2;
+      break;
+    default:
+      player.x = scene.sys.game.config.width / 2;
+      player.y = scene.sys.game.config.height / 2;
+      break;
   }
   player.setDepth(player.y + 20);
 }
 
 // ===== CREATE =====
 function create() {
-  // Add background (never destroy this!)
-  bg = this.add.image(
+  // Add background
+  const bg = this.add.image(
     this.cameras.main.centerX,
     this.cameras.main.centerY,
     'background'
@@ -498,27 +455,26 @@ function create() {
   bg.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
   bg.setDepth(-1);
 
-  // Create player sprite (use correct frame and atlas key, never destroy this!)
-  player = this.add.sprite(
-    this.sys.game.config.width/2,
-    this.sys.game.config.height/2,
-    'hero', // <-- Use 'hero' as the key, not the PNG
-    'walk_down_1'
-  );
-  player.setDepth(player.y + 20);
-
-  // Setup controls and animations
-  setupAnimations(this);
-  cursors = this.input.keyboard.createCursorKeys();
-  shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
-
   // Create groups for environment
   grassGroup = this.add.group();
   pathGroup = this.add.group();
   treeGroup = this.add.group();
   rockGroup = this.add.group();
 
-  // Generate initial area (center spawn)
+  // Setup controls and animations
+  setupAnimations(this);
+  cursors = this.input.keyboard.createCursorKeys();
+  shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
+
+  // Create player (not placed yet)
+  player = this.add.sprite(
+    this.sys.game.config.width/2,
+    this.sys.game.config.height/2,
+    'hero'
+  );
+  player.setDepth(player.y + 20);
+
+  // Generate initial area
   generateArea(this, areaX, areaY);
 }
 
@@ -581,10 +537,9 @@ function update() {
     }
   }
 
-  // ===== EDGE TRANSITION =====
+  // Area transition logic
   let exited = false, exitDir = null;
-  let previousX = player.x;
-  let previousY = player.y;
+  let previousX = player.x, previousY = player.y;
   const w = mainConfig.width, h = mainConfig.height;
 
   if (canMove) {
