@@ -57,24 +57,26 @@ function showBattleChatMessage(scene, message) {
 function showEncounterSprites(pokeName, playerName) {
   document.querySelectorAll('.battle-pokemon').forEach(e => e.remove());
   const backImg = document.createElement('img');
+ const backImg = document.createElement('img');
   backImg.src = `pokemon/back/${playerName}.gif`;
   backImg.className = 'battle-pokemon';
   backImg.style.position = 'absolute';
-  backImg.style.left = '230px'; // set to match left inside the battle box
-  backImg.style.top = '340px';  // set to match bottom inside the battle box
-  backImg.style.width = '128px';
+  backImg.style.left = '210px';   // tune for your layout
+  backImg.style.top = '340px';
+  backImg.style.width = '180px';  // larger
   backImg.style.zIndex = 10;
   backImg.style.pointerEvents = 'none';
   document.body.appendChild(backImg);
 
-  // Wild Pokémon (front sprite)
+  // Wild Pokémon (front sprite): smaller and further (top right of battle box)
   const frontImg = document.createElement('img');
   frontImg.src = `pokemon/front/${pokeName}.gif`;
   frontImg.className = 'battle-pokemon';
   frontImg.style.position = 'absolute';
-  frontImg.style.left = '520px'; // set to match right inside the battle box
-  frontImg.style.top = '180px';  // set to match top inside the battle box
-  frontImg.style.width = '128px';
+  frontImg.style.left = '540px';  // tune for your layout
+  backImg.style.top = '180px';
+  frontImg.style.top = '180px';
+  frontImg.style.width = '120px'; // smaller
   frontImg.style.zIndex = 10;
   frontImg.style.pointerEvents = 'none';
   document.body.appendChild(frontImg);
