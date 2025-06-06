@@ -648,6 +648,7 @@ function tryEncounter(scene) {
   }
 }
 function startEncounter(scene) {
+  function startEncounter(scene) {
   encounterActive = true;
   setSidePanelMode("battle");
   if (player) player.setVisible(false);
@@ -655,30 +656,56 @@ function startEncounter(scene) {
   if (rockGroup) rockGroup.setVisible(false);
   if (grassGroup) grassGroup.setVisible(false);
   if (pathGroup) pathGroup.setVisible(false);
+
   const pokeIndex = Phaser.Math.Between(0, pokemonNames.length - 1);
   const pokeName = pokemonNames[pokeIndex];
   currentEncounterName = pokeName;
   if (battleUI) battleUI.destroy(true);
   battleUI = scene.add.container();
+
   const rect = scene.add.rectangle(scene.sys.game.config.width/2, scene.sys.game.config.height/2, 640, 350, 0x222222, 0.97);
   rect.setStrokeStyle(4, 0xffffff);
   battleUI.add(rect);
-  const frontURL = `https://img.pokemondb.net/sprites/black-white/anim/normal/${pokeName}.gif`;
-  const playerName = party[0] || "bulbasaur";
-  const backURL = `https://img.pokemondb.net/sprites/black-white/anim/back-normal/${playerName}.gif`;
-  scene.load.image(`encounter-front`, frontURL);
-  scene.load.image(`encounter-back`, backURL);
-  scene.load.once("complete", () => {
+
+  // Updated sprite paths (local, with fallback)
+  const frontLocal = `pokemon/front/${pokeName}.gif`;
+  const backLocal = `pokemon/back/${party[0] || "bulbasaur"}.gif`;
+  const frontOnline = `https://img.pokemondb.net/sprites/black-white/anim/normal/${pokeName}.gif`;
+  const backOnline = `https://img.pokemondb.net/sprites/black-white/anim/back-normal/${party[0] || "bulbasaur"}.gif`;
+
+  // Helper function to load with fallback
+  function loadWithFallback(key, localPath, onlinePath, callback) {
+    scene.load.image(key, localPath);
+    scene.load.once('loaderror', (file) => {
+      if (file.key === key) {
+        scene.textures.remove(key);
+        scene.load.image(key, onlinePath);
+        scene.load.once('complete', callback);
+        scene.load.start();
+      }
+    });
+    scene.load.once('complete', callback);
+    scene.load.start();
+  }
+
+  // Load both sprites, then show them
+  let imagesLoaded = 0;
+  function showSprites() {
+    imagesLoaded++;
+    if (imagesLoaded < 2) return;
     const back = scene.add.image(170, 600, "encounter-back").setScale(2.7).setOrigin(0.5, 1);
     const front = scene.add.image(580, 220, "encounter-front").setScale(2.7).setOrigin(0.5, 1);
-    battleUI.add(back); battleUI.add(front);
+    battleUI.add(back);
+    battleUI.add(front);
     const style = { fontFamily: "monospace", fontSize: "22px", fill: "#fff" };
     const label = scene.add.text(120, 420, `A wild ${pokeName.charAt(0).toUpperCase() + pokeName.slice(1)} appeared!`, style);
     battleUI.add(label);
     scene.encounterUI = battleUI;
     scene.encounterLabel = label;
-  });
-  scene.load.start();
+  }
+
+  loadWithFallback("encounter-front", frontLocal, frontOnline, showSprites);
+  loadWithFallback("encounter-back", backLocal, backOnline, showSprites);
 }
 function endEncounterUI() {
   setSidePanelMode("main");
