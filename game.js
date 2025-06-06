@@ -992,4 +992,3 @@ function createSidePanel() {
     }
   }, this);
 }
-
