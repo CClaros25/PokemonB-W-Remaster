@@ -35,7 +35,7 @@ let slotOptionsPanel = null;
 
 // ===== POKEMON DATA (GEN 1-5) =====
 const pokemonNames = [
-// 1-151
+  // 1-151
 "bulbasaur","ivysaur","venusaur","charmander","charmeleon","charizard","squirtle","wartortle","blastoise","caterpie","metapod","butterfree","weedle","kakuna","beedrill","pidgey","pidgeotto","pidgeot","rattata","raticate","spearow","fearow","ekans","arbok","pikachu","raichu","sandshrew","sandslash","nidoran-f","nidorina","nidoqueen","nidoran-m","nidorino","nidoking","clefairy","clefable","vulpix","ninetales","jigglypuff","wigglytuff","zubat","golbat","oddish","gloom","vileplume","paras","parasect","venonat","venomoth","diglett","dugtrio","meowth","persian","psyduck","golduck","mankey","primeape","growlithe","arcanine","poliwag","poliwhirl","poliwrath","abra","kadabra","alakazam","machop","machoke","machamp","bellsprout","weepinbell","victreebel","tentacool","tentacruel","geodude","graveler","golem","ponyta","rapidash","slowpoke","slowbro","magnemite","magneton","farfetchd","doduo","dodrio","seel","dewgong","grimer","muk","shellder","cloyster","gastly","haunter","gengar","onix","drowzee","hypno","krabby","kingler","voltorb","electrode","exeggcute","exeggutor","cubone","marowak","hitmonlee","hitmonchan","lickitung","koffing","weezing","rhyhorn","rhydon","chansey","tangela","kangaskhan","horsea","seadra","goldeen","seaking","staryu","starmie","mr-mime","scyther","jynx","electabuzz","magmar","pinsir","tauros","magikarp","gyarados","lapras","ditto","eevee","vaporeon","jolteon","flareon","porygon","omanyte","omastar","kabuto","kabutops","aerodactyl","snorlax","articuno","zapdos","moltres","dratini","dragonair","dragonite","mewtwo","mew",
 // 152-251
 "chikorita","bayleef","meganium","cyndaquil","quilava","typhlosion","totodile","croconaw","feraligatr","sentret","furret","hoothoot","noctowl","ledyba","ledian","spinarak","ariados","crobat","chinchou","lanturn","pichu","cleffa","igglybuff","togepi","togetic","natu","xatu","mareep","flaaffy","ampharos","bellossom","marill","azumarill","sudowoodo","politoed","hoppip","skiploom","jumpluff","aipom","sunkern","sunflora","yanma","wooper","quagsire","espeon","umbreon","murkrow","slowking","misdreavus","unown","wobbuffet","girafarig","pineco","forretress","dunsparce","gligar","steelix","snubbull","granbull","qwilfish","scizor","shuckle","heracross","sneasel","teddiursa","ursaring","slugma","magcargo","swinub","piloswine","corsola","remoraid","octillery","delibird","mantine","skarmory","houndour","houndoom","kingdra","phanpy","donphan","porygon2","stantler","smeargle","tyrogue","hitmontop","smoochum","elekid","magby","miltank","blissey","raikou","entei","suicune","larvitar","pupitar","tyranitar","lugia","ho-oh","celebi",
@@ -53,6 +53,35 @@ function showBattleChatMessage(scene, message) {
   battleChatUI.chatText.setText(message);
 }
 
+// ===== ENCOUNTER SPRITES WITH ANIMATED GIFS =====
+function showEncounterSprites(pokeName, playerName) {
+  document.querySelectorAll('.battle-pokemon').forEach(e => e.remove());
+  const backImg = document.createElement('img');
+  backImg.src = `pokemon/back/${playerName}.gif`;
+  backImg.className = 'battle-pokemon';
+  backImg.style.position = 'absolute';
+  backImg.style.left = '120px';
+  backImg.style.bottom = '120px';
+  backImg.style.width = '160px';
+  backImg.style.zIndex = 10;
+  backImg.style.pointerEvents = 'none';
+  document.body.appendChild(backImg);
+
+  const frontImg = document.createElement('img');
+  frontImg.src = `pokemon/front/${pokeName}.gif`;
+  frontImg.className = 'battle-pokemon';
+  frontImg.style.position = 'absolute';
+  frontImg.style.right = '120px';
+  frontImg.style.top = '120px';
+  frontImg.style.width = '160px';
+  frontImg.style.zIndex = 10;
+  frontImg.style.pointerEvents = 'none';
+  document.body.appendChild(frontImg);
+}
+
+function removeEncounterSprites() {
+  document.querySelectorAll('.battle-pokemon').forEach(e => e.remove());
+}
 
 // ===== UTILITY FUNCTIONS =====
 function checkCollision(obj1, obj2) {
@@ -416,7 +445,7 @@ function renderSidePanel(scene, buttons) {
   });
 }
 
-// ===== PARTY PANEL RENDERER =====
+// ===== PARTY PANEL RENDERER (With Add to Empty Slot) =====
 function renderPartyPanel(scene, mode="party", onSelect) {
   scene.children.removeAll();
   // 2x3 grid
@@ -432,12 +461,22 @@ function renderPartyPanel(scene, mode="party", onSelect) {
     let content = name ? name.charAt(0).toUpperCase() + name.slice(1) : "(empty)";
     let rect = scene.add.rectangle(x, y, slotW, slotH, 0x222222, 0.85).setOrigin(0, 0);
     let txt = scene.add.text(x + 10, y + 40, content, { fontFamily: "monospace", fontSize: "22px", fill: color });
+    rect.setInteractive();
+
     if (name) {
-      rect.setInteractive().on('pointerdown', () => {
+      rect.on('pointerdown', () => {
         if (typeof onSelect === "function") onSelect(i, name);
       });
       txt.setInteractive().on('pointerdown', () => {
         if (typeof onSelect === "function") onSelect(i, name);
+      });
+    } else {
+      // Empty slot: allow adding from Dex
+      rect.on('pointerdown', () => {
+        showDexAdd(scene, i, mode);
+      });
+      txt.setInteractive().on('pointerdown', () => {
+        showDexAdd(scene, i, mode);
       });
     }
   }
@@ -449,65 +488,39 @@ function renderPartyPanel(scene, mode="party", onSelect) {
     });
 }
 
-// ===== SLOT OPTIONS PANEL =====
-function showSlotOptions(scene, slotIdx, mode="party") {
-  if (slotOptionsPanel) slotOptionsPanel.destroy(true);
-  let name = party[slotIdx];
-  if (!name) return;
-  slotOptionsPanel = scene.add.container();
-  let bg = scene.add.rectangle(320, 180, 200, 180, 0x333333, 0.98);
-  slotOptionsPanel.add(bg);
-
-  let y = 110;
-  // Switch
-  slotOptionsPanel.add(
-    scene.add.text(250, y, "[Switch]", { fontFamily: "monospace", fontSize: "22px", fill: "#fff" })
+// ===== ADD TO EMPTY SLOT FROM DEX =====
+function showDexAdd(scene, slotIdx, mode="party") {
+  let dexList = pokedex.filter(name => !party.includes(name));
+  let panel = scene.add.container();
+  let bg = scene.add.rectangle(320, 180, 200, 280, 0x222244, 0.99);
+  panel.add(bg);
+  let y = 70;
+  if (dexList.length === 0) {
+    panel.add(
+      scene.add.text(240, y, "No available Pokémon", { fontFamily: "monospace", fontSize: "18px", fill: "#fff" })
+    );
+    y += 30;
+  } else {
+    dexList.slice(0, 6).forEach((name, i) => {
+      panel.add(
+        scene.add.text(240, y, name.charAt(0).toUpperCase() + name.slice(1), { fontFamily: "monospace", fontSize: "18px", fill: "#fff" })
+          .setInteractive()
+          .on('pointerdown', () => {
+            party[slotIdx] = name;
+            localStorage.setItem('party', JSON.stringify(party));
+            setSidePanelMode(mode);
+            panel.destroy(true);
+          })
+      );
+      y+=30;
+    });
+  }
+  panel.add(
+    scene.add.text(240, y, "[Cancel]", { fontFamily: "monospace", fontSize: "20px", fill: "#aaa" })
       .setInteractive()
       .on('pointerdown', () => {
-        showDexSwitch(scene, slotIdx, mode);
-        slotOptionsPanel.destroy(true);
-        slotOptionsPanel = null;
-      })
-  ); y+=30;
-  // Item (stub)
-  slotOptionsPanel.add(
-    scene.add.text(250, y, "[Item]", { fontFamily: "monospace", fontSize: "22px", fill: "#fff" })
-      .setInteractive()
-      .on('pointerdown', () => {
-        // TODO: Show bag/items
-        slotOptionsPanel.destroy(true);
-        slotOptionsPanel = null;
-      })
-  ); y+=30;
-  // Slot (swap order)
-  slotOptionsPanel.add(
-    scene.add.text(250, y, "[Slot]", { fontFamily: "monospace", fontSize: "22px", fill: "#fff" })
-      .setInteractive()
-      .on('pointerdown', () => {
-        showSlotSwap(scene, slotIdx, mode);
-        slotOptionsPanel.destroy(true);
-        slotOptionsPanel = null;
-      })
-  ); y+=30;
-  // Remove
-  slotOptionsPanel.add(
-    scene.add.text(250, y, "[Remove]", { fontFamily: "monospace", fontSize: "22px", fill: "#f55" })
-      .setInteractive()
-      .on('pointerdown', () => {
-        party.splice(slotIdx, 1);
-        localStorage.setItem('party', JSON.stringify(party));
+        panel.destroy(true);
         setSidePanelMode(mode);
-        slotOptionsPanel.destroy(true);
-        slotOptionsPanel = null;
-      })
-  ); y+=30;
-  // Cancel
-  slotOptionsPanel.add(
-    scene.add.text(250, y, "[Cancel]", { fontFamily: "monospace", fontSize: "20px", fill: "#aaa" })
-      .setInteractive()
-      .on('pointerdown', () => {
-        slotOptionsPanel.destroy(true);
-        slotOptionsPanel = null;
       })
   );
 }
@@ -571,89 +584,7 @@ function showSlotSwap(scene, slotIdx, mode="party") {
   );
 }
 
-// ===== SIDE PANEL SCENE =====
-function createSidePanel() {
-  sidePanelSceneRef = this;
-  setSidePanelMode("main");
-  // Add Esc listener for menus
-  this.input.keyboard.on('keydown-ESC', () => {
-    if (sidePanelMode === "party" || sidePanelMode === "battle_party") {
-      setSidePanelMode(encounterActive ? "battle" : "main");
-    }
-    if (window.dexPanel) {
-      window.dexPanel.destroy(true);
-      window.dexPanel = null;
-    }
-  }, this);
-}
-
-// ===== SWITCH SIDE PANEL MODES =====
-function setSidePanelMode(mode) {
-  sidePanelMode = mode;
-  if (slotOptionsPanel) { slotOptionsPanel.destroy(true); slotOptionsPanel = null; }
-  if (sidePanelSceneRef) {
-    if (mode === "main") {
-      renderSidePanel(sidePanelSceneRef, getMainPanelButtons());
-    } else if (mode === "battle") {
-      renderSidePanel(sidePanelSceneRef, getBattlePanelButtons());
-    } else if (mode === "party") {
-      renderPartyPanel(sidePanelSceneRef, "party", (idx) => showSlotOptions(sidePanelSceneRef, idx, "party"));
-    } else if (mode === "battle_party") {
-      renderPartyPanel(sidePanelSceneRef, "battle", (idx) => {
-        if (party[idx]) {
-          movePartySlot(idx, 0);
-          setSidePanelMode("battle");
-        }
-      });
-    }
-  }
-}
-
-// ===== POKEDEX PANEL =====
-function showPokedexPanel() {
-  if (window.dexPanel) return;
-  const scene = sidePanelSceneRef.scene.scene;
-  const panel = scene.add.container();
-  const bg = scene.add.rectangle(384, 384, 650, 700, 0x111111, 0.97);
-  panel.add(bg);
-
-  panel.add(scene.add.text(220, 80, "Pokédex", { fontFamily: "monospace", fontSize: "48px", fill: "#fff" }));
-  pokedex.forEach((name, i) => {
-    panel.add(scene.add.text(200, 150 + i * 32, `${i + 1}. ${name.charAt(0).toUpperCase() + name.slice(1)}`, { fontFamily: "monospace", fontSize: "28px", fill: "#fff" }));
-  });
-
-  function escClose(e) {
-    if (e.key === 'Escape') {
-      panel.destroy(true);
-      window.dexPanel = null;
-      window.removeEventListener('keydown', escClose);
-    }
-  }
-  window.addEventListener('keydown', escClose);
-  window.dexPanel = panel;
-}
-
-// ===== ENCOUNTER/DEX LOGIC =====
-function playerIsInGrass() {
-  if (!grassGroup) return false;
-  let inGrass = false;
-  const playerCenter = { x: player.x, y: player.y };
-
-  grassGroup.children.iterate(grass => {
-    if (!grass || !grass.visible) return;
-    const dist = Phaser.Math.Distance.Between(playerCenter.x, playerCenter.y, grass.x, grass.y);
-    if (dist < TILE_SIZE / 2) {
-      inGrass = true;
-    }
-  });
-  return inGrass;
-}
-function tryEncounter(scene) {
-  if (!playerIsInGrass() || encounterActive) return;
-  if (Phaser.Math.Between(1, 2000) === 1) { 
-    startEncounter(scene);
-  }
-}
+// ===== ENCOUNTER/DEX LOGIC (Battle uses DOM GIFs, not Phaser images) =====
 function startEncounter(scene) {
   encounterActive = true;
   setSidePanelMode("battle");
@@ -669,7 +600,7 @@ function startEncounter(scene) {
   if (battleUI) battleUI.destroy(true);
   battleUI = scene.add.container();
 
-  // ===== BATTLE CHAT UI (bottom-right) =====
+  // BATTLE CHAT UI (bottom-right)
   if (battleChatUI) { battleChatUI.destroy(true); }
   battleChatUI = scene.add.container();
   const chatWidth = 420, chatHeight = 80;
@@ -686,76 +617,47 @@ function startEncounter(scene) {
   battleChatUI.chatText = chatText;
   showBattleChatMessage(scene, `You encountered a wild ${pokeName.charAt(0).toUpperCase() + pokeName.slice(1)}!`);
 
-  // ===== Rest of the battle UI =====
+  // Add animated GIFs using DOM
+  let playerName = party[0] || "bulbasaur";
+  showEncounterSprites(pokeName, playerName);
+
+  // Battle UI box
   const rect = scene.add.rectangle(scene.sys.game.config.width/2, scene.sys.game.config.height/2, 640, 350, 0x222222, 0.97);
   rect.setStrokeStyle(4, 0xffffff);
   battleUI.add(rect);
-
-  // Updated sprite paths (local, with fallback)
-  const frontLocal = `pokemon/front/${pokeName}.gif`;
-  const backLocal = `pokemon/back/${party[0] || "bulbasaur"}.gif`;
-  const frontOnline = `https://img.pokemondb.net/sprites/black-white/anim/normal/${pokeName}.gif`;
-  const backOnline = `https://img.pokemondb.net/sprites/black-white/anim/back-normal/${party[0] || "bulbasaur"}.gif`;
-
-  // Helper function to load with fallback
-  function loadWithFallback(key, localPath, onlinePath, callback) {
-    scene.load.image(key, localPath);
-    scene.load.once('loaderror', (file) => {
-      if (file.key === key) {
-        scene.textures.remove(key);
-        scene.load.image(key, onlinePath);
-        scene.load.once('complete', callback);
-        scene.load.start();
-      }
-    });
-    scene.load.once('complete', callback);
-    scene.load.start();
-  }
-
-  // Load both sprites, then show them
-  let imagesLoaded = 0;
-  function showSprites() {
-    imagesLoaded++;
-    if (imagesLoaded < 2) return;
-    const back = scene.add.image(170, 600, "encounter-back").setScale(2.7).setOrigin(0.5, 1);
-    const front = scene.add.image(580, 220, "encounter-front").setScale(2.7).setOrigin(0.5, 1);
-    battleUI.add(back);
-    battleUI.add(front);
-    // Central label is removed in favor of chat box
-    scene.encounterUI = battleUI;
-  }
-
-  loadWithFallback("encounter-front", frontLocal, frontOnline, showSprites);
-  loadWithFallback("encounter-back", backLocal, backOnline, showSprites);
 }
+
 function endEncounterUI() {
   setSidePanelMode("main");
   encounterActive = false;
   currentEncounterName = null;
   if (battleUI) { battleUI.destroy(true); battleUI = null; }
   if (battleChatUI) { battleChatUI.destroy(true); battleChatUI = null; }
+  removeEncounterSprites();
   if (player) player.setVisible(true);
   if (treeGroup) treeGroup.setVisible(true);
   if (rockGroup) rockGroup.setVisible(true);
   if (grassGroup) grassGroup.setVisible(true);
   if (pathGroup) pathGroup.setVisible(true);
 }
+
 function tryCatchPokemon() {
   if (!currentEncounterName || !sidePanelSceneRef) return;
-  // Infinite pokeballs: always allow catch attempt, no item decrement needed
   if (Math.random() < 0.5) {
     addToDex(currentEncounterName);
     addToParty(currentEncounterName);
     showBattleChatMessage(sidePanelSceneRef.scene.scene, `Gotcha! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} was caught!`);
     setTimeout(() => {
       if (battleUI) battleUI.destroy(true);
-      if (battleChatUI) { battleChatUI.destroy(true); battleChatUI = null; }
+      if (battleChatUI) battleChatUI.destroy(true);
+      removeEncounterSprites();
       endEncounterUI();
     }, 1200);
   } else {
     showBattleChatMessage(sidePanelSceneRef.scene.scene, `Oh no! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} broke free!`);
   }
 }
+
 // ===== AREA GENERATION & SWITCHING =====
 function generateArea(scene, ax, ay, entranceDir, previousX, previousY) {
   if (grassGroup) grassGroup.clear(true, true);
@@ -827,7 +729,6 @@ function create() {
 
   generateArea(this, areaX, areaY);
 
-  // Default party/dex if missing
   if (pokedex.length === 0) {
     pokedex = ['bulbasaur', 'charmander', 'squirtle'];
     localStorage.setItem('pokedex', JSON.stringify(pokedex));
@@ -991,4 +892,4 @@ function createSidePanel() {
       window.dexPanel = null;
     }
   }, this);
-} 
+}
