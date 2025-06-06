@@ -584,6 +584,25 @@ function showSlotSwap(scene, slotIdx, mode="party") {
   );
 }
 
+function setSidePanelMode(mode) {
+  sidePanelMode = mode;
+  if (sidePanelSceneRef) {
+    if (mode === "main") {
+      renderSidePanel(sidePanelSceneRef, getMainPanelButtons());
+    } else if (mode === "party") {
+      renderPartyPanel(sidePanelSceneRef, "party");
+    } else if (mode === "battle") {
+      renderSidePanel(sidePanelSceneRef, getBattlePanelButtons());
+    } else if (mode === "battle_party") {
+      renderPartyPanel(sidePanelSceneRef, "battle", (i, name) => {
+        movePartySlot(i, 0);
+        setSidePanelMode("battle");
+        showEncounterSprites(currentEncounterName, party[0]);
+      });
+    }
+  }
+}
+
 // ===== ENCOUNTER/DEX LOGIC (Battle uses DOM GIFs, not Phaser images) =====
 function startEncounter(scene) {
   encounterActive = true;
@@ -655,6 +674,19 @@ function tryCatchPokemon() {
     }, 1200);
   } else {
     showBattleChatMessage(sidePanelSceneRef.scene.scene, `Oh no! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} broke free!`);
+  }
+}
+
+function tryEncounter(scene) {
+  if (encounterActive) return;
+  let standingOnGrass = false;
+  grassGroup.getChildren().forEach(grass => {
+    const dx = Math.abs(player.x - grass.x);
+    const dy = Math.abs(player.y - grass.y);
+    if (dx < TILE_SIZE/2 && dy < TILE_SIZE/2) standingOnGrass = true;
+  });
+  if (standingOnGrass && Math.random() < 0.02) {
+    startEncounter(scene);
   }
 }
 
