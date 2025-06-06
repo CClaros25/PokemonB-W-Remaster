@@ -643,7 +643,7 @@ function playerIsInGrass() {
 }
 function tryEncounter(scene) {
   if (!playerIsInGrass() || encounterActive) return;
-  if (Phaser.Math.Between(1, 2000) === 1) { 
+  if (Phaser.Math.Between(1, 500) === 1) { 
     startEncounter(scene);
   }
 }
