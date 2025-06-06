@@ -991,4 +991,4 @@ function createSidePanel() {
       window.dexPanel = null;
     }
   }, this);
-}
+} 
