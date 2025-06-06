@@ -57,7 +57,6 @@ function showBattleChatMessage(scene, message) {
 function showEncounterSprites(pokeName, playerName) {
   document.querySelectorAll('.battle-pokemon').forEach(e => e.remove());
   const backImg = document.createElement('img');
- const backImg = document.createElement('img');
   backImg.src = `pokemon/back/${playerName}.gif`;
   backImg.className = 'battle-pokemon';
   backImg.style.position = 'absolute';
