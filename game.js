@@ -60,20 +60,21 @@ function showEncounterSprites(pokeName, playerName) {
   backImg.src = `pokemon/back/${playerName}.gif`;
   backImg.className = 'battle-pokemon';
   backImg.style.position = 'absolute';
-  backImg.style.left = '120px';
-  backImg.style.bottom = '120px';
-  backImg.style.width = '160px';
+  backImg.style.left = '230px'; // set to match left inside the battle box
+  backImg.style.top = '340px';  // set to match bottom inside the battle box
+  backImg.style.width = '128px';
   backImg.style.zIndex = 10;
   backImg.style.pointerEvents = 'none';
   document.body.appendChild(backImg);
 
+  // Wild Pokémon (front sprite)
   const frontImg = document.createElement('img');
   frontImg.src = `pokemon/front/${pokeName}.gif`;
   frontImg.className = 'battle-pokemon';
   frontImg.style.position = 'absolute';
-  frontImg.style.right = '120px';
-  frontImg.style.top = '120px';
-  frontImg.style.width = '160px';
+  frontImg.style.left = '520px'; // set to match right inside the battle box
+  frontImg.style.top = '180px';  // set to match top inside the battle box
+  frontImg.style.width = '128px';
   frontImg.style.zIndex = 10;
   frontImg.style.pointerEvents = 'none';
   document.body.appendChild(frontImg);
