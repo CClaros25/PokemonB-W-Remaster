@@ -18,6 +18,7 @@ let grassGroup, pathGroup, treeGroup, rockGroup;
 let encounterActive = false;
 let currentEncounterName = null;
 let battleUI = null;
+let battleChatUI = null;
 let pokedex = JSON.parse(localStorage.getItem('pokedex') || '[]');
 let party = JSON.parse(localStorage.getItem('party') || '[]');
 if (pokedex.length === 0) {
@@ -45,6 +46,13 @@ const pokemonNames = [
 // 494-649
 "victini","snivy","servine","serperior","tepig","pignite","emboar","oshawott","dewott","samurott","patrat","watchog","lillipup","herdier","stoutland","purrloin","liepard","pansage","simisage","pansear","simisear","panpour","simipour","munna","musharna","pidove","tranquill","unfezant","blitzle","zebstrika","roggenrola","boldore","gigalith","woobat","swoobat","drilbur","excadrill","audino","timburr","gurdurr","conkeldurr","tympole","palpitoad","seismitoad","throh","sawk","sewaddle","swadloon","leavanny","venipede","whirlipede","scolipede","cottonee","whimsicott","petilil","lilligant","basculin","sandile","krokorok","krookodile","darumaka","darmanitan","maractus","dwebble","crustle","scraggy","scrafty","sigilyph","yamask","cofagrigus","tirtouga","carracosta","archen","archeops","trubbish","garbodor","zorua","zoroark","minccino","cinccino","gothita","gothorita","gothitelle","solosis","duosion","reuniclus","ducklett","swanna","vanillite","vanillish","vanilluxe","deerling","sawsbuck","emolga","karrablast","escavalier","foongus","amoonguss","frillish","jellicent","alomomola","joltik","galvantula","ferroseed","ferrothorn","klink","klang","klinklang","tynamo","eelektrik","eelektross","elgyem","beheeyem","litwick","lampent","chandelure","axew","fraxure","haxorus","cubchoo","beartic","cryogonal","shelmet","accelgor","stunfisk","mienfoo","mienshao","druddigon","golett","golurk","pawniard","bisharp","bouffalant","rufflet","braviary","vullaby","mandibuzz","heatmor","durant","deino","zweilous","hydreigon","larvesta","volcarona","cobalion","terrakion","virizion","tornadus","tornadus-therian","thundurus","thundurus-therian","reshiram","zekrom","landorus","landorus-therian","kyurem","kyurem-black","kyurem-white","keldeo","keldeo-resolute","meloetta","meloetta-pirouette","genesect"
 ];
+
+// ===== CHAT UTILITY =====
+function showBattleChatMessage(scene, message) {
+  if (!battleChatUI) return;
+  battleChatUI.chatText.setText(message);
+}
+
 
 // ===== UTILITY FUNCTIONS =====
 function checkCollision(obj1, obj2) {
@@ -633,9 +641,8 @@ function playerIsInGrass() {
 
   grassGroup.children.iterate(grass => {
     if (!grass || !grass.visible) return;
-    // Use a small threshold to check if player is "standing" in the grass
     const dist = Phaser.Math.Distance.Between(playerCenter.x, playerCenter.y, grass.x, grass.y);
-    if (dist < TILE_SIZE / 2) { // Adjust this threshold as needed
+    if (dist < TILE_SIZE / 2) {
       inGrass = true;
     }
   });
@@ -643,12 +650,11 @@ function playerIsInGrass() {
 }
 function tryEncounter(scene) {
   if (!playerIsInGrass() || encounterActive) return;
-  if (Phaser.Math.Between(1, 500) === 1) { 
+  if (Phaser.Math.Between(1, 2000) === 1) { 
     startEncounter(scene);
   }
 }
 function startEncounter(scene) {
-  function startEncounter(scene) {
   encounterActive = true;
   setSidePanelMode("battle");
   if (player) player.setVisible(false);
@@ -663,6 +669,24 @@ function startEncounter(scene) {
   if (battleUI) battleUI.destroy(true);
   battleUI = scene.add.container();
 
+  // ===== BATTLE CHAT UI (bottom-right) =====
+  if (battleChatUI) { battleChatUI.destroy(true); }
+  battleChatUI = scene.add.container();
+  const chatWidth = 420, chatHeight = 80;
+  const chatX = scene.sys.game.config.width - chatWidth - 30;
+  const chatY = scene.sys.game.config.height - chatHeight - 30;
+  const chatBg = scene.add.rectangle(chatX, chatY, chatWidth, chatHeight, 0x111111, 0.92)
+    .setOrigin(0, 0)
+    .setStrokeStyle(2, 0xffffff);
+  const chatText = scene.add.text(chatX + 18, chatY + 16, '', {
+    fontFamily: "monospace", fontSize: "20px", fill: "#fff", wordWrap: { width: chatWidth - 36 }
+  });
+  battleChatUI.add(chatBg);
+  battleChatUI.add(chatText);
+  battleChatUI.chatText = chatText;
+  showBattleChatMessage(scene, `You encountered a wild ${pokeName.charAt(0).toUpperCase() + pokeName.slice(1)}!`);
+
+  // ===== Rest of the battle UI =====
   const rect = scene.add.rectangle(scene.sys.game.config.width/2, scene.sys.game.config.height/2, 640, 350, 0x222222, 0.97);
   rect.setStrokeStyle(4, 0xffffff);
   battleUI.add(rect);
@@ -697,11 +721,8 @@ function startEncounter(scene) {
     const front = scene.add.image(580, 220, "encounter-front").setScale(2.7).setOrigin(0.5, 1);
     battleUI.add(back);
     battleUI.add(front);
-    const style = { fontFamily: "monospace", fontSize: "22px", fill: "#fff" };
-    const label = scene.add.text(120, 420, `A wild ${pokeName.charAt(0).toUpperCase() + pokeName.slice(1)} appeared!`, style);
-    battleUI.add(label);
+    // Central label is removed in favor of chat box
     scene.encounterUI = battleUI;
-    scene.encounterLabel = label;
   }
 
   loadWithFallback("encounter-front", frontLocal, frontOnline, showSprites);
@@ -712,6 +733,7 @@ function endEncounterUI() {
   encounterActive = false;
   currentEncounterName = null;
   if (battleUI) { battleUI.destroy(true); battleUI = null; }
+  if (battleChatUI) { battleChatUI.destroy(true); battleChatUI = null; }
   if (player) player.setVisible(true);
   if (treeGroup) treeGroup.setVisible(true);
   if (rockGroup) rockGroup.setVisible(true);
@@ -719,19 +741,19 @@ function endEncounterUI() {
   if (pathGroup) pathGroup.setVisible(true);
 }
 function tryCatchPokemon() {
-  if (!currentEncounterName || !sidePanelSceneRef || !sidePanelSceneRef.encounterLabel) return;
-  let label = sidePanelSceneRef.encounterLabel;
+  if (!currentEncounterName || !sidePanelSceneRef) return;
   // Infinite pokeballs: always allow catch attempt, no item decrement needed
   if (Math.random() < 0.5) {
     addToDex(currentEncounterName);
     addToParty(currentEncounterName);
-    label.setText(`Gotcha! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} was caught!`);
+    showBattleChatMessage(sidePanelSceneRef.scene.scene, `Gotcha! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} was caught!`);
     setTimeout(() => {
       if (battleUI) battleUI.destroy(true);
+      if (battleChatUI) { battleChatUI.destroy(true); battleChatUI = null; }
       endEncounterUI();
     }, 1200);
   } else {
-    label.setText(`Oh no! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} broke free!`);
+    showBattleChatMessage(sidePanelSceneRef.scene.scene, `Oh no! ${currentEncounterName.charAt(0).toUpperCase() + currentEncounterName.slice(1)} broke free!`);
   }
 }
 // ===== AREA GENERATION & SWITCHING =====
