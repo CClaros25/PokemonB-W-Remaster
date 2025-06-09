@@ -455,10 +455,10 @@ function renderPartyPanel(scene, mode="party", onSelect) {
   const slotW = 135, slotH = 100;
   const startX = 40, startY = 40;
   for (let i = 0; i < MAX_PARTY_SIZE; i++) {
-    const col = i % 2, row = Math.floor(i / 2);
-    const x = startX + col * (slotW + 40);
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = startX + col * (slotW + 20);
     const y = startY + row * (slotH + 24);
-
+}
     let name = party[i];
     let color = name ? "#fff" : "#888";
     let content = name ? name.charAt(0).toUpperCase() + name.slice(1) : "(empty)";
@@ -585,6 +585,73 @@ function showSlotSwap(scene, slotIdx, mode="party") {
         setSidePanelMode(mode);
       })
   );
+}
+
+function showPokedexPanel() {
+  if (!sidePanelSceneRef) return;
+  if (window.dexPanel) window.dexPanel.destroy(true);
+
+  let panel = sidePanelSceneRef.add.container();
+  window.dexPanel = panel;
+
+  let bg = sidePanelSceneRef.add.rectangle(294, 166, 570, 320, 0x111133, 0.98);
+  panel.add(bg);
+
+  let title = sidePanelSceneRef.add.text(204, 20, "POKÉDEX", { fontFamily: "monospace", fontSize: "32px", fill: "#fff" });
+  panel.add(title);
+
+  let y = 65;
+  pokedex.forEach((name, i) => {
+    let inParty = party.includes(name);
+    let row = sidePanelSceneRef.add.text(110, y, 
+      name.charAt(0).toUpperCase()+name.slice(1) + (inParty ? " [IN PARTY]" : ""), 
+      { fontFamily: "monospace", fontSize: "20px", fill: "#fff" }
+    );
+    panel.add(row);
+
+    // Switch button
+    if (!inParty && party.length < MAX_PARTY_SIZE) {
+      let switchBtn = sidePanelSceneRef.add.text(370, y, "[Switch]", { fontFamily: "monospace", fontSize: "16px", fill: "#3f3" })
+        .setInteractive()
+        .on('pointerdown', () => {
+          party.push(name);
+          localStorage.setItem('party', JSON.stringify(party));
+          showPokedexPanel();
+        });
+      panel.add(switchBtn);
+    }
+
+    // Remove from party
+    if (inParty) {
+      let removeBtn = sidePanelSceneRef.add.text(450, y, "[Remove]", { fontFamily: "monospace", fontSize: "16px", fill: "#f33" })
+        .setInteractive()
+        .on('pointerdown', () => {
+          let idx = party.indexOf(name);
+          if (idx !== -1) party.splice(idx, 1);
+          localStorage.setItem('party', JSON.stringify(party));
+          showPokedexPanel();
+        });
+      panel.add(removeBtn);
+    }
+    y += 28;
+  });
+
+  // Close/cancel button
+  let closeBtn = sidePanelSceneRef.add.text(420, 300, "[Close]", { fontFamily: "monospace", fontSize: "20px", fill: "#fff" })
+    .setInteractive()
+    .on('pointerdown', () => {
+      panel.destroy(true);
+      window.dexPanel = null;
+      setSidePanelMode("main");
+    });
+  panel.add(closeBtn);
+
+  // ESC closes dex
+  sidePanelSceneRef.input.keyboard.once('keydown-ESC', () => {
+    if (window.dexPanel) window.dexPanel.destroy(true);
+    window.dexPanel = null;
+    setSidePanelMode("main");
+  });
 }
 
 function setSidePanelMode(mode) {
