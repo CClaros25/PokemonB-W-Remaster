@@ -9,6 +9,7 @@ const ROCK_HEIGHT = 16;
 const ROCK_SCALE = 0.2;
 const TILE_SIZE = 64;
 const MAX_PARTY_SIZE = 6;
+const ENCOUNTER_PERCENT = 0.2;
 
 // ===== GAME STATE =====
 let player, cursors, trees = [], rocks = [], shiftKey;
@@ -687,8 +688,8 @@ function tryEncounter(scene) {
     const dy = Math.abs(player.y - grass.y);
     if (dx < TILE_SIZE/2 && dy < TILE_SIZE/2) standingOnGrass = true;
   });
-  if (standingOnGrass && Math.random() < 0.002) {
-    startEncounter(scene);
+  if (standingOnGrass && Math.random() < ENCOUNTER_PERCENT / 100) {
+  startEncounter(scene);
   }
 }
 
