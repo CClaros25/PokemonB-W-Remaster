@@ -129,6 +129,58 @@ function findStartPosition(cols, rows, occupiedPositions) {
   return { x: Math.floor(cols/2), y: Math.floor(rows/2) };
 }
 
+function showPartySlotOptions(scene, slotIdx) {
+  let panel = scene.add.container();
+  let bg = scene.add.rectangle(320, 180, 220, 180, 0x333333, 0.97);
+  panel.add(bg);
+
+  let y = 120;
+  // Switch with Pokédex
+  panel.add(
+    scene.add.text(240, y, "[Switch with Dex]", { fontFamily: "monospace", fontSize: "18px", fill: "#6fa" })
+      .setInteractive()
+      .on('pointerdown', () => {
+        panel.destroy(true);
+        showDexSwitch(scene, slotIdx);
+      })
+  ); y += 32;
+
+  // Remove from party
+  panel.add(
+    scene.add.text(240, y, "[Remove from Party]", { fontFamily: "monospace", fontSize: "18px", fill: "#f66" })
+      .setInteractive()
+      .on('pointerdown', () => {
+        party.splice(slotIdx, 1);
+        localStorage.setItem('party', JSON.stringify(party));
+        panel.destroy(true);
+        setSidePanelMode("party");
+      })
+  ); y += 32;
+
+  // Swap with another slot
+  panel.add(
+    scene.add.text(240, y, "[Swap Position]", { fontFamily: "monospace", fontSize: "18px", fill: "#fc3" })
+      .setInteractive()
+      .on('pointerdown', () => {
+        panel.destroy(true);
+        showSlotSwap(scene, slotIdx);
+      })
+  ); y += 32;
+
+  // Cancel
+  panel.add(
+    scene.add.text(240, y, "[Cancel]", { fontFamily: "monospace", fontSize: "18px", fill: "#aaa" })
+      .setInteractive()
+      .on('pointerdown', () => {
+        panel.destroy(true);
+      })
+  );
+  // ESC support
+  scene.input.keyboard.once('keydown-ESC', () => {
+    panel.destroy(true);
+  });
+}
+
 // ===== ANIMATIONS =====
 function setupAnimations(scene) {
   const anims = [
