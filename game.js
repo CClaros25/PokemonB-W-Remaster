@@ -687,7 +687,7 @@ function tryEncounter(scene) {
     const dy = Math.abs(player.y - grass.y);
     if (dx < TILE_SIZE/2 && dy < TILE_SIZE/2) standingOnGrass = true;
   });
-  if (standingOnGrass && Math.random() < 0.00002) {
+  if (standingOnGrass && Math.random() < 0.002) {
     startEncounter(scene);
   }
 }
