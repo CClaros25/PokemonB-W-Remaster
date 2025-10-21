@@ -510,7 +510,6 @@ function renderPartyPanel(scene, mode="party", onSelect) {
     const col = i % 3, row = Math.floor(i / 3);
     const x = startX + col * (slotW + 20);
     const y = startY + row * (slotH + 24);
-}
     let name = party[i];
     let color = name ? "#fff" : "#888";
     let content = name ? name.charAt(0).toUpperCase() + name.slice(1) : "(empty)";
@@ -541,7 +540,7 @@ function renderPartyPanel(scene, mode="party", onSelect) {
     .on('pointerdown', () => {
       setSidePanelMode(mode === "battle" ? "battle" : "main");
     });
-
+}
 
 // ===== ADD TO EMPTY SLOT FROM DEX =====
 function showDexAdd(scene, slotIdx, mode="party") {
