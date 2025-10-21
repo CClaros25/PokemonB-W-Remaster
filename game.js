@@ -541,7 +541,7 @@ function renderPartyPanel(scene, mode="party", onSelect) {
     .on('pointerdown', () => {
       setSidePanelMode(mode === "battle" ? "battle" : "main");
     });
-}
+
 
 // ===== ADD TO EMPTY SLOT FROM DEX =====
 function showDexAdd(scene, slotIdx, mode="party") {
